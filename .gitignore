@@ -1,0 +1,12 @@
+# Default ignored files
+cmake-build-*/ 
+build/ 
+out/ 
+.vs/ 
+*.obj 
+*.exe 
+*.pdb 
+*.ilk 
+.idea/ 
+CMakeFiles/ 
+CMakeCache.txt 
