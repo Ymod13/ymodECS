@@ -85,9 +85,6 @@ public:
                         else if (field.value == "MULTI_CIRCLE") coll_type = Collisions::MULTI_CIRCLE;
 
                         component.*(field.member) = coll_type;
-
-                        // TODO: add bullet type string to enum check and unify the previous checks
-
                     } else {
                         component.*(field.member) = field.value;
                     }
@@ -101,4 +98,5 @@ public:
 
     // OpenUSD
     static bool LoadUsdFile(const std::string& filepath, ecs::World& world);
+    static bool HandleEntityType( ecs::World& world, const ecs::EntityID &e, const UsdPrim& prim, std::string &out_entity_type);
 };
