@@ -17,7 +17,7 @@ namespace ecs {
 
 class ThreadPool {
 public:
-    // Avvia un numero fisso di thread (di default pari ai core della CPU)
+    // Starts a fixed number of threads (defaults to the number of CPU cores)
     ThreadPool(size_t threads = std::thread::hardware_concurrency()) : stop(false) {
         for (size_t i = 0; i < threads; ++i) {
             workers.emplace_back([this] {
@@ -46,14 +46,14 @@ public:
         }
     }
 
-    // Accetta qualsiasi tipo di funzione da eseguire in background
+    // Accepts any type of function to run in the background
     template<class F, class... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::invoke_result<F, Args...>::type>
     {
         using return_type = typename std::invoke_result<F, Args...>::type;
 
-        // Impacchetta il task in uno shared_ptr per poterlo muovere in sicurezza
+        // Wraps the task in a shared_ptr so it can be moved safely
         auto task = std::make_shared<std::packaged_task<return_type()>>(
             std::bind(std::forward<F>(f), std::forward<Args>(args)...)
         );
@@ -61,14 +61,14 @@ public:
         std::future<return_type> res = task->get_future();
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
-            if (stop) throw std::runtime_error("Impossibile aggiungere task: il ThreadPool è spento.");
+            if (stop) throw std::runtime_error("Impossible to add task: ThreadPool is OFF.");
             tasks.emplace([task]() { (*task)(); });
         }
-        condition.notify_one(); // Sveglia uno dei thread dormienti
+        condition.notify_one(); // Wakes up one of the sleeping threads
         return res;
     }
 
-    // Spegne il pool in modo pulito attendendo la fine dei lavori rimasti
+    // Shuts down the pool cleanly, waiting for the remaining jobs to finish
     ~ThreadPool() {
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
@@ -128,9 +128,9 @@ class Scheduler {
 public:
 
     ~Scheduler() {
-        // 1. Completa tutti i future pendenti
+        // 1. Complete all pending futures
         wait();
-        // 2. Svuota i sistemi PRIMA che il ThreadPool venga distrutto
+        // 2. Clear the systems BEFORE the ThreadPool is destroyed
         systems_.clear();
     }
 
@@ -148,7 +148,7 @@ public:
         systems_.push_back(std::move(node));
     }
 
-    // Esegue un tick: raggruppa i sistemi in wave parallele e le esegue
+    // Runs a tick: groups the systems into parallel waves and executes them
     void tick(World& world, float dt) {
 
         auto waves = build_waves();
@@ -177,7 +177,7 @@ public:
             }
             else {
                 for (auto idx : wave) {
-                    // pool.enqueue sostituisce std::async
+                    // pool.enqueue replaces std::async
                     futures.push_back(Threadpool.enqueue([this, &world, idx, dt]() {
                         systems_[idx].run(world, dt);
                     }));
@@ -201,18 +201,18 @@ public:
         futures.clear();
     }
 
-    // Stampa il grafo delle dipendenze tra sistemi
+    // Prints the dependency graph between systems
     void print_dependency_graph() const {
-        std::cout << "\n══ Grafo dipendenze sistemi ══════════════════════\n";
+        std::cout << "\n══ Systems Dependecy Graph ══════════════════════\n";
         for (std::size_t i = 0; i < systems_.size(); ++i) {
             std::cout << "  [" << systems_[i].name << "]\n";
             std::cout << "    writes: " << systems_[i].writes << "\n";
             std::cout << "    reads:  " << systems_[i].reads  << "\n";
             for (std::size_t j = i + 1; j < systems_.size(); ++j) {
                 if (systems_[i].conflicts_with(systems_[j])) {
-                    std::cout << "     conflitto con [" << systems_[j].name << "]\n";
+                    std::cout << "     conflicts with [" << systems_[j].name << "]\n";
                 } else {
-                    std::cout << "    parallelo  con [" << systems_[j].name << "]\n";
+                    std::cout << "    parallel to [" << systems_[j].name << "]\n";
                 }
             }
         }
@@ -220,8 +220,8 @@ public:
     }
 
 private:
-    // ── Costruisce le wave: gruppi di sistemi senza conflitti interni ──
-    // Algoritmo greedy: ogni sistema va nella prima wave compatibile.
+    // ── Builds the waves: groups of systems with no internal conflicts ──
+    // Greedy algorithm: each system goes into the first compatible wave.
     std::vector<std::vector<std::size_t>> build_waves() const {
         std::vector<std::vector<std::size_t>> waves;
         std::vector<int> assigned(systems_.size(), -1);
@@ -230,7 +230,7 @@ private:
             int target_wave = -1;
 
             if (!systems_[i].requires_single_thread()) {
-                // Cerca la prima wave esistente senza conflitti
+                // Looks for the first existing wave with no conflicts
                 for (int wi = static_cast<int>(waves.size()) - 1; wi >= 0; --wi) {
                     bool ok = true;
                     for (auto idx : waves[wi]) {
@@ -242,16 +242,16 @@ private:
                     if (ok) {
                         target_wave = wi;
                     } else {
-                        break;  // un conflitto blocca anche le wave precedenti
+                        break;  // a conflict also blocks earlier waves
                     }
 
                 }
             }
 
             if (target_wave == -1) {
-                waves.push_back({i});          // nuova wave
+                waves.push_back({i});          // new wave
             } else {
-                waves[target_wave].push_back(i); // aggiunto alla wave esistente
+                waves[target_wave].push_back(i); // added to the existing wave
             }
             assigned[i] = target_wave == -1
                 ? static_cast<int>(waves.size()) - 1

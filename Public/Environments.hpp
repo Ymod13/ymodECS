@@ -118,9 +118,9 @@ namespace Collisions {
         MULTI_CIRCLE
     };
 
-    // Un cerchio di collisione espresso in coordinate LOCALI rispetto allo sprite
+    // A collision circle expressed in LOCAL coordinates relative to the sprite
     struct LocalCircle {
-        Vector2D local_center; // dist from sprite center
+        Vector2D local_center; // distance from sprite center
         float radius;
     };
 

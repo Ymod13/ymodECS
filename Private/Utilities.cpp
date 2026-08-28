@@ -19,7 +19,7 @@ void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite
     pos.old_pos = pos.pos;
     pos.pos = new_pos;
 
-    // clamp pos to screen limits
+    // Clamp position to screen limits
     clamp_screen_position(pos.pos, scale, sprite.texture.get());
 
     sprite.rect.x = sprite.scaled_rect.x = pos.pos.x;
@@ -113,7 +113,7 @@ bool FunctionsLib::check_radius_collision(const float &radius_a, const float &ra
         OutPushVector.normalize();
 
         if (dist < 0.0001f) {
-            // circles are touching
+            // Circles are touching
             OutPushVector = OutPushVector * 10.0f;
         }
         else {
@@ -138,9 +138,9 @@ bool FunctionsLib::check_radius_rectangle_collision(const float &radius_a, const
     float cy = center_a.y;
     float cr = radius_a;
 
-    // ── Punto più vicino del rect al centro del cerchio ──
-    // clamp = se il centro è dentro il rect, resta dov'è
-    //         se è fuori, viene proiettato sul bordo
+    // ── Closest point on the rectangle to the circle center ──
+    // clamp = if the center is inside the rectangle, it stays where it is
+    //         if it is outside, it is projected onto the edge
     float closest_x = std::clamp(cx, rx, rx + rw);
     float closest_y = std::clamp(cy, ry, ry + rh);
 
@@ -148,7 +148,7 @@ bool FunctionsLib::check_radius_rectangle_collision(const float &radius_a, const
     float dy = cy - closest_y;
     float dist_sq = dx * dx + dy * dy;
 
-    // ── Caso 1: centro FUORI dal rect ────────────────────
+    // ── Case 1: center OUTSIDE the rectangle ────────────────────
     if (dist_sq > 0.0001f) {
         if (dist_sq < cr * cr) {
             float dist = std::sqrt(dist_sq);
@@ -161,7 +161,7 @@ bool FunctionsLib::check_radius_rectangle_collision(const float &radius_a, const
             return true;
         }
     } else {
-        // Il centro è dentro, trova il bordo più vicino
+        // The center is inside, find the closest edge
         float overlap_left   =  (cx - rx);
         float overlap_right  =  (rx + rw - cx);
         float overlap_top    =  (cy - ry);
@@ -256,14 +256,14 @@ bool FunctionsLib::check_rectangle_collision(const Sprite &sprite_a_rect, const 
         return false;
     }
 
-    // Push sull'asse di minima penetrazione
+    // Push along the axis of minimum penetration
     if (overlap_x < overlap_y) {
-        // Risolvi su X
+        // Resolve on X
         float sign = (ax + aw * 0.5f < bx + bw * 0.5f) ? -1.0f : 1.0f;
         OutPushVector.x = sign * overlap_x;
         OutPushVector.y = 0.0f;
     } else {
-        // Risolvi su Y
+        // Resolve on Y
         float sign = (ay + ah * 0.5f < by + bh * 0.5f) ? -1.0f : 1.0f;
         OutPushVector.x = 0.0f;
         OutPushVector.y = sign * overlap_y;
@@ -277,41 +277,41 @@ bool FunctionsLib::CheckPixelPerfectCollision(const Sprite &objA, const Sprite &
     if (!SDL_HasRectIntersectionFloat(&objA.rect, &objB.rect)) {
         return false;
     }
-    // FASE 2: Calcola il rettangolo di intersezione a schermo
+    // PHASE 2: Calculate the screen-space intersection rectangle
     SDL_FRect intersectionF;
     SDL_GetRectIntersectionFloat(&objA.rect, &objB.rect, &intersectionF);
 
-    // Convertiamo l'intersezione in coordinate intere per scorrere i pixel
+    // Convert the intersection to integer coordinates to iterate over the pixels
     int interX = (int)intersectionF.x;
     int interY = (int)intersectionF.y;
     int interW = (int)intersectionF.w;
     int interH = (int)intersectionF.h;
 
-    // Assicuriamoci che le superfici dei pixel siano valide
+    // Make sure the pixel surfaces are valid
     if (!objA.surface || !objB.surface) return false;
 
-    // FASE 3: Scansiona la zona di intersezione pixel per pixel
+    // PHASE 3: Scan the intersection area pixel by pixel
     for (int y = interY; y < interY + interH; ++y) {
         for (int x = interX; x < interX + interW; ++x) {
 
-            // Converti le coordinate dello schermo in coordinate LOCALI dell'oggetto A
+            // Convert screen coordinates to LOCAL coordinates of object A
             int localAX = x - (int)objA.rect.x;
             int localAY = y - (int)objA.rect.y;
 
-            // Converti le coordinate dello schermo in coordinate LOCALI dell'oggetto B
+            // Convert screen coordinates to LOCAL coordinates of object B
             int localBX = x - (int)objB.rect.x;
             int localBY = y - (int)objB.rect.y;
 
-            // Estrai il valore Alpha del pixel per l'oggetto A
+            // Extract the Alpha value of the pixel for object A
             Uint8 alphaA = 0;
             if (SDL_ReadSurfacePixel(objA.surface.get(), localAX, localAY, NULL, NULL, NULL, &alphaA)) {
 
-                // Se il pixel di A è opaco, controlliamo anche il rispettivo pixel di B
+                // If A's pixel is opaque, also check the corresponding pixel of B
                 if (alphaA > alphaThreshold) {
                     Uint8 alphaB = 0;
                     if (SDL_ReadSurfacePixel(objB.surface.get(), localBX, localBY, NULL, NULL, NULL, &alphaB)) {
 
-                        // Se ENTRAMBI i pixel nello stesso punto sono opachi, c'è una collisione!
+                        // If BOTH pixels at the same position are opaque, there is a collision!
                         if (alphaB > alphaThreshold) {
                             return true;
                         }
@@ -336,11 +336,11 @@ void FunctionsLib::GenerateCircleCluster(Sprite& obj, int cellSize, Uint8 alphaT
     int w = obj.surface->w;
     int h = obj.surface->h;
 
-    // Calcoliamo il centro dello sprite per usarlo come origine (0,0) delle coordinate locali
+    // Calculate the sprite center and use it as the origin (0,0) of the local coordinates
     float centerX = w / 2.0f;
     float centerY = h / 2.0f;
 
-    // Scorriamo l'immagine cella per cella (griglia)
+    // Iterate through the image cell by cell (grid)
     for (int cellY = 0; cellY < h; cellY += cellSize) {
         for (int cellX = 0; cellX < w; cellX += cellSize) {
 
@@ -348,7 +348,7 @@ void FunctionsLib::GenerateCircleCluster(Sprite& obj, int cellSize, Uint8 alphaT
             float sumY = 0;
             int visiblePixelCount = 0;
 
-            // Analizziamo i pixel all'interno della cella attuale
+            // Analyze the pixels inside the current cell
             for (int y = cellY; y < cellY + cellSize && y < h; ++y) {
                 for (int x = cellX; x < cellX + cellSize && x < w; ++x) {
                     Uint8 alpha = 0;
@@ -362,13 +362,13 @@ void FunctionsLib::GenerateCircleCluster(Sprite& obj, int cellSize, Uint8 alphaT
                 }
             }
 
-            // Se la cella contiene pixel visibili (es. almeno il 15% della dimensione della cella)
+            // If the cell contains visible pixels (e.g. at least 15% of the cell size)
             if (visiblePixelCount > (cellSize * cellSize * 0.15f)) {
-                // Calcoliamo il centro di massa (baricentro) dei pixel visibili in questa cella
+                // Calculate the center of mass (centroid) of the visible pixels in this cell
                 float avgX = sumX / visiblePixelCount;
                 float avgY = sumY / visiblePixelCount;
 
-                // Troviamo il raggio minimo per coprire tutti i pixel visibili di questa cella
+                // Find the minimum radius needed to cover all visible pixels in this cell
                 float maxDistanzaSq = 0.0f;
                 for (int y = cellY; y < cellY + cellSize && y < h; ++y) {
                     for (int x = cellX; x < cellX + cellSize && x < w; ++x) {
@@ -383,7 +383,7 @@ void FunctionsLib::GenerateCircleCluster(Sprite& obj, int cellSize, Uint8 alphaT
                     }
                 }
 
-                // Creiamo il cerchio locale inserendo le coordinate rispetto al centro dello sprite
+                // Create the local circle using coordinates relative to the sprite center
                 Collisions::LocalCircle c;
                 c.local_center.x = avgX - centerX;
                 c.local_center.y = avgY - centerY;
@@ -400,10 +400,10 @@ std::vector<Collisions::WorldCircle> FunctionsLib::GetWorldColliders(const Sprit
     std::vector<Collisions::WorldCircle> worldColliders;
     worldColliders.reserve(obj.localColliderCluster.size());
 
-    // Calcoliamo il centro dello sprite nel mondo di gioco (schermo)
+    // Calculate the sprite center in the game world (screen)
     Vector2D world_center = obj.center;
 
-    // Convertiamo l'angolo dello sprite in radianti
+    // Convert the sprite angle to radians
     float rad = obj.angle * (std::numbers::pi / 180.0f);
     float cosA = std::cos(rad);
     float sinA = std::sin(rad);
@@ -446,7 +446,7 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
             break;
 
         case Collisions::MULTI_CIRCLE:
-            //  texture loading with collision data
+            // Texture loading with collision data
             SDL_Surface *surface = IMG_Load(filename.c_str());
             if (surface) {
                 out_sprite.surface.reset(surface);
@@ -549,7 +549,7 @@ void FunctionsLib::DrawCircle(SDL_Renderer* renderer, Vector2D &center, float ra
     float error = 1.0f - radius;
 
     while (x >= y) {
-        // Sfrutta la simmetria a 8 vie del cerchio per disegnare i punti
+        // Use the circle's 8-way symmetry to draw the points
         SDL_RenderPoint(renderer, center.x + x, center.y + y);
         SDL_RenderPoint(renderer, center.x + y, center.y + x);
         SDL_RenderPoint(renderer, center.x - y, center.y + x);

@@ -18,12 +18,12 @@ enum GameEventType {
 
 using GameEventID = std::uint8_t;
 
-// Wrapper polimorfico base
+// Basic polymorphic wrapper
 struct IEventCallback {
     virtual ~IEventCallback() = default;
 };
 
-// Specializzazione tipizzata
+// Typed specialization
 template<typename... Args>
 struct EventCallback : IEventCallback {
     std::function<void(Args...)> fn;
@@ -46,13 +46,13 @@ public:
     void *data = nullptr;
     std::shared_ptr<IEventCallback> callback;
 
-    // Helper per assegnare il callback in modo tipizzato
+    // Helper to assign the callback in a typed manner
     template<typename... Args>
     void SetCallback(std::function<void(Args...)> fn) {
         callback = std::make_shared<EventCallback<Args...>>(std::move(fn));
     }
 
-    // Helper per invocare
+    // Helper to invoke
     void Run() {
         auto* cb = dynamic_cast<EventCallback<>*>(callback.get());
         if (cb) cb->invoke();
@@ -74,31 +74,31 @@ private:
     float damage = 42.0f;
     int entityId = 7;
 
-    // I parametri sono catturati, Run() diventa void()
+    // The parameters are captured, Run() becomes void()
     event->SetCallback<>([damage, entityId]() {
-        // usa damage e entityId
+        // use damage and entityId
     });
 
     void OnPlayerDeath() {...}
 
-    event->SetCallback(OnPlayerDeath); // ✅ diretto
-    Se la funzione esistente ha parametri, li bindi prima:
+    event->SetCallback(OnPlayerDeath); // ✅ direct
+    If the existing function has parameters, bind them first:
     cppvoid OnDamage(float dt, int damage) { ... }
 
     float dt = 0.16f;
     int damage = 42;
 
-    // Con lambda che cattura i valori
+    // With a lambda that captures the values
     event->SetCallback([dt, damage]() {
         OnDamage(dt, damage); // ✅
     });
 
-    // Con std::bind
+    // With std::bind
     event->SetCallback(std::bind(OnDamage, dt, damage));
 
 
 
-    // ProcessEvents rimane semplice:
+    // ProcessEvents stays simple:
     current_event->Run(); // ✅
 
     auto event = std::make_unique<GameEvent>();
@@ -115,4 +115,3 @@ private:
 };
 
 #endif //YMODECS_EVENTSLISTENER_HPP
-

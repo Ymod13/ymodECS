@@ -8,18 +8,18 @@
 #include "ecs.hpp"
 
 // ============================================================
-//  Access<> — dichiarazione dipendenze di un sistema
+//  Access<> — declaration of a system's dependencies
 // ============================================================
 
 namespace ecs {
-    // Tag che descrivono il tipo di accesso
+    // Tags that describe the type of access
     struct ReadTag              { static constexpr bool required = true;  static constexpr bool writable = false; };
     struct WriteTag             { static constexpr bool required = true;  static constexpr bool writable = true;  };
     struct ReadIfExistsTag      { static constexpr bool required = false; static constexpr bool writable = false; };
     struct WriteIfExistsTag     { static constexpr bool required = false; static constexpr bool writable = true;  };
     struct FilterComponentTag   { static constexpr bool included = true; };
 
-    // Singola dipendenza: accoppia un tipo componente con un tag di accesso
+    // Single dependency: pairs a component type with an access tag
     template<typename TComponent, typename TAccessTag>
     struct Dep {
         using component  = TComponent;
@@ -27,8 +27,8 @@ namespace ecs {
     };
 
     // ── Access<Deps...> ──────────────────────────────────────────
-    // Accumula dipendenze via alias di tipo annidati.
-    // Ogni ::Read<T> produce un nuovo Access con Dep<T,ReadTag> in coda.
+    // Accumulates dependencies via nested type aliases.
+    // Each ::Read<T> produces a new Access with Dep<T,ReadTag> appended.
     template<typename... Deps>
     struct AccessMode {
         using dependencies = std::tuple<Deps...>;
@@ -69,23 +69,23 @@ namespace ecs {
         template<typename T>
         struct has_included<T, std::void_t<decltype(T::included)>> : std::true_type {};
 
-        // ── Helpers per lo scheduler ─────────────────────────────
+        // ── Helpers for the scheduler ─────────────────────────────
 
-        // Riempie un Signature con i componenti *required* (Read + Write)
+        // Fills a Signature with the *required* components (Read + Write)
         static Signature required_signature() {
             Signature s;
             fill_required<Deps...>(s);
             return s;
         }
 
-        // Riempie un Signature con i componenti *writable* (Write + WriteIfExists)
+        // Fills a Signature with the *writable* components (Write + WriteIfExists)
         static Signature write_signature() {
             Signature s;
             fill_writes<Deps...>(s);
             return s;
         }
 
-        // Riempie un Signature con *tutti* i componenti toccati (anche IfExists)
+        // Fills a Signature with *all* touched components (including IfExists)
         static Signature full_signature() {
             Signature s;
             fill_all<Deps...>(s);
@@ -100,7 +100,7 @@ namespace ecs {
         }
 
     private:
-        // ── Fold ricorsivo sui Dep<T,Tag> ────────────────────────
+        // ── Recursive fold over Dep<T,Tag> ────────────────────────
         template<typename... Ds>
         static void fill_required(Signature& s) {
             (([&](){

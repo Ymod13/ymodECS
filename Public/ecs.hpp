@@ -28,20 +28,21 @@ static constexpr std::size_t MAX_COMPONENTS = 64;
 // ─── Types ───────────────────────────────────────────────────
 using EntityID    = std::uint32_t;
 using ComponentID = std::uint8_t;
-/*
- *  È un array di N bit, dove ogni bit può essere 0 o 1.
- *  La Signature è una maschera di bit che rappresenta quali componenti possiede un'entità, o quali componenti richiede un sistema.
-    Componenti:   Health Transform Velocity Sprite  ...
-    ID:              0       1        2       3
+    /*
+    *  Signature it's a N bits array
+    *  The Signature is a bit mask representing which components are owned by an entity, or which components a system requires
+       Components:   Health Transform Velocity Sprite  ...
+       ID:              0       1        2       3
 
-    Entità A:     [  1       1        0       0  ]  → ha Health e Transform
-    Entità B:     [  0       1        1       1  ]  → ha Transform, Velocity, Sprite
+       Entity A:     [  1       1        0       0  ]  → has Health and Transform
+       Entity B:     [  0       1        1       1  ]  → has Transform, Velocity, Sprite
 
-    Sistema Rendering richiede: [  0   1   0   1  ]  → Transform + Sprite
+       rendering system requires: [  0   1   0   1  ]  → Transform + Sprite
 
-    Entità A & Sistema: [ 0  1  0  0 ] ≠ Sistema  → NON processata
-    Entità B & Sistema: [ 0  1  0  1 ] == Sistema → processata
-    */
+       Entity A & System: [ 0  1  0  0 ] ≠ System  → NOT processed
+       Entity B & System: [ 0  1  0  1 ] == System → processed
+
+       */
 using Signature   = std::bitset<MAX_COMPONENTS>;
 
 

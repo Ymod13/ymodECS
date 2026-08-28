@@ -127,7 +127,7 @@ inline bool Init_Systems(ecs::World& world) {
 
 inline bool Quit_Systems(ecs::World& world) {
 
-    // Pulizia (SDL3 gestisce meglio la memoria, ma è bene essere espliciti)
+    // Cleanup (SDL3 handles memory better, but it's good to be explicit)
 
     /*
     world.each<Sprite>([](ecs::EntityID, Sprite& sprite)
@@ -175,7 +175,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
 
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 if (input.event.button.button == SDL_BUTTON_LEFT) {
-                    // click sinistro
+                    // left click
                     Vector2D dest_pos = Vector2D(input.event.motion.x, input.event.motion.y);
                     FunctionsLib::SpawnBullet(world, env::player_id, env::PISTOL, env::player_pos, dest_pos);
                 }
@@ -267,36 +267,36 @@ inline void Handle_Input(ecs::World& world, float dt) {
                 /*
             case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
                 switch (event.gbutton.button) {
-                case SDL_GAMEPAD_BUTTON_SOUTH: // Equivalente ad A su Xbox o Croce su PS
-                        SDL_Log("Pulsante Inferiore (A/Croce) premuto");
+                case SDL_GAMEPAD_BUTTON_SOUTH: // Equivalent to A on Xbox or Cross on PS
+                        SDL_Log("Bottom button (A/Cross) pressed");
                         break;
                 case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-                        SDL_Log("D-Pad Sinistra premuto");
+                        SDL_Log("D-Pad Left pressed");
                         break;
                 }
                 break;
 
             case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
                 const int DEADZONE = 8000;
-                // In SDL3 le macro degli assi usano il prefisso SDL_GAMEPAD_AXIS_
+                // In SDL3 the axis macros use the SDL_GAMEPAD_AXIS_ prefix
                 if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX) {
                     if (event.gaxis.value < -DEADZONE) {
-                        SDL_Log("Levetta sinistra: OVEST");
+                        SDL_Log("Left stick: WEST");
                     } else if (event.gaxis.value > DEADZONE) {
-                        SDL_Log("Levetta sinistra: EST");
+                        SDL_Log("Left stick: EAST");
                     }
                 }
                 break;
             }
 
-                // 5. GESTIONE HOT-PLUG IN SDL3
+                // 5. HOT-PLUG HANDLING IN SDL3
             case SDL_EVENT_GAMEPAD_ADDED:
 
                 if (!gGamepad) {
-                    // e.gdevice.which contiene direttamente l'ID istanza corretto
+                    // e.gdevice.which directly contains the correct instance ID
                     gGamepad = SDL_OpenGamepad(e.gdevice.which);
                     if (gGamepad) {
-                        SDL_Log("Gamepad connesso: %s", SDL_GetGamepadName(gGamepad));
+                        SDL_Log("Gamepad connected: %s", SDL_GetGamepadName(gGamepad));
                     }
                 }
 
@@ -307,7 +307,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
                 if (gGamepad && e.gdevice.which == SDL_GetGamepadID(gGamepad)) {
                     SDL_CloseGamepad(gGamepad);
                     gGamepad = NULL;
-                    SDL_Log("Gamepad disconnesso!");
+                    SDL_Log("Gamepad disconnected!");
                 }
                 break;
                 */
@@ -542,7 +542,7 @@ inline void Render_Scene(ecs::World& world, float dt)
 
     SDL_HideCursor();
 
-    SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Nero
+    SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
     SDL_RenderClear(ctx.renderer);
 
     if (env::is_text_debug) {
@@ -557,7 +557,7 @@ inline void Render_Scene(ecs::World& world, float dt)
                 //  a pointer to a point indicating the point around which dstrect will be rotated (if NULL, rotation will be done around dstrect.w/2, dstrect.h/2).
                 SDL_FPoint* rotation_center = NULL;
 
-                // Disegna la texture ruotata sulla GPU
+                // Draws the rotated texture on the GPU
                 if (SDL_RenderTextureRotated(ctx.renderer, sprite_texture, NULL, &sprite.scaled_rect, sprite.angle, rotation_center, SDL_FLIP_NONE)) {
                 //if (SDL_RenderTexture(ctx.renderer, SpriteTexture, nullptr, &sprite.scaled_rect)) {
                     if (env::is_text_debug) {
