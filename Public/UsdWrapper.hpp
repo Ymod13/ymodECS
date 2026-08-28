@@ -68,7 +68,16 @@ public:
         ([&](auto& field) {
             using ValueType = decltype(field.value);
                 if (GetAttr<ValueType>(child_prim, field.name, field.value)) {
-                    if constexpr (std::is_same_v<typename Fields::Type, Collisions::CollisionType> &&  std::is_same_v<ValueType, std::string>) {
+                    if constexpr (std::is_same_v<typename Fields::Type, env::BulletType> &&  std::is_same_v<ValueType, std::string>) {
+                        env::BulletType bullet_type = env::NONE;
+                        if      (field.value == "PISTOL")   bullet_type = env::PISTOL;
+                        else if (field.value == "SHOTGUN")  bullet_type = env::SHOTGUN;
+                        else if (field.value == "ROCKET")   bullet_type = env::ROCKET;
+                        else if (field.value == "GRENADE")  bullet_type = env::GRENADE;
+
+                        component.*(field.member) = bullet_type;
+                    }
+                    else if constexpr (std::is_same_v<typename Fields::Type, Collisions::CollisionType> &&  std::is_same_v<ValueType, std::string>) {
                         Collisions::CollisionType coll_type = Collisions::NONE;
 
                         if      (field.value == "RADIUS")       coll_type = Collisions::RADIUS;
@@ -78,6 +87,7 @@ public:
                         component.*(field.member) = coll_type;
 
                         // TODO: add bullet type string to enum check and unify the previous checks
+
                     } else {
                         component.*(field.member) = field.value;
                     }

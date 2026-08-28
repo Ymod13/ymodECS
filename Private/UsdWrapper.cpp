@@ -102,67 +102,17 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
         FieldPack<Sprite, bool, bool>{"overlaps_only", &Sprite::overlaps_only},
         FieldPack<Sprite, bool, bool>{"draw_debug_shapes", &Sprite::draw_debug_shapes});
 
-        // Bullet
-        UsdPrim bullet_prim = prim.GetChild(TfToken("Bullet"));
-        if (bullet_prim) {
-            Bullet bullet;
+        UsdWrapper::LoadComponentPrim<Bullet>(world, e, prim, "Bullet",
+        FieldPack<Bullet, std::string, env::BulletType>{"bullet_type", &Bullet::bullet_type},
+        FieldPack<Bullet, float, float>{"speed", &Bullet::speed},
+        FieldPack<Bullet, int, int>{"damage", &Bullet::damage},
+        FieldPack<Bullet, float, float>{"area_radius", &Bullet::area_radius},
+        FieldPack<Bullet, int, int>{"area_damage", &Bullet::area_damage},
+        FieldPack<Bullet, float, float>{"lifespan", &Bullet::lifespan});
 
-            std::string bullet_type;
-            if (GetAttr<std::string>(bullet_prim, "bullet_type",  bullet_type)) {
-
-                if      (bullet_type == "PISTOL")   bullet.bullet_type = env::PISTOL;
-                else if (bullet_type == "SHOTGUN")  bullet.bullet_type = env::SHOTGUN;
-                else if (bullet_type == "ROCKET")   bullet.bullet_type = env::ROCKET;
-                else if (bullet_type == "GRENADE")  bullet.bullet_type = env::GRENADE;
-
-            }
-
-            float speed;
-            if (GetAttr<float>(bullet_prim, "speed",  speed)) {
-                bullet.speed = speed;
-            }
-            
-            int damage;
-            if (GetAttr<int>(bullet_prim, "damage",  damage)) {
-                bullet.damage = damage;
-            }
-
-            float area_radius;
-            if (GetAttr<float>(bullet_prim, "area_radius",  area_radius)) {
-                bullet.area_radius = area_radius;
-            }
-
-            int area_damage;
-            if (GetAttr<int>(bullet_prim, "area_damage",  area_damage)) {
-                bullet.area_damage = area_damage;
-            }
-
-            float lifespan;
-            if (GetAttr<float>(bullet_prim, "lifespan",  lifespan)) {
-                bullet.lifespan = lifespan;
-            }
-
-            world.add(e, std::move(bullet));
-        }
-
-        // Game Cursor
-        UsdPrim game_cursor_prim = prim.GetChild(TfToken("GameCursor"));
-        if (game_cursor_prim) {
-            GameCursor game_cursor;
-
-            GfVec2f hotspot;
-            if (GetAttr<GfVec2f>(game_cursor_prim, "hotspot",  hotspot)) {
-                game_cursor.hotspot = hotspot;
-            }
-
-            bool is_enabled;
-            if (GetAttr<bool>(game_cursor_prim, "is_enabled",  is_enabled)) {
-                game_cursor.is_enabled = is_enabled;
-            }
-
-            world.add(e, std::move(game_cursor));
-
-        }
+        UsdWrapper::LoadComponentPrim<GameCursor>(world, e, prim, "GameCursor",
+        FieldPack<GameCursor, GfVec2f, Vector2D>{"hotspot", &GameCursor::hotspot},
+        FieldPack<GameCursor, bool, bool>{"is_enabled", &GameCursor::is_enabled});
     }
 
     std::cout << "=== USD Loader: completato ===\n";
