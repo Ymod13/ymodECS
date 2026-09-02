@@ -12,5 +12,8 @@ Here is a recap of all the features:
 - Custom mouse pointer support
 - keyboard/mouse support
 
-- Updated Gameplay video:
-https://github.com/Ymod13/ymodECS/blob/main/Resources/ymodECS_gameplay.mp4
+- Updated Gameplay video in "/Resources" folder
+
+https://github.com/user-attachments/assets/9eb38edc-7444-4ea3-bf36-2a0c7e053ed8
+
+
