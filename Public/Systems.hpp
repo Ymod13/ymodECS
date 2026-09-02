@@ -113,6 +113,7 @@ inline bool Init_Systems(ecs::World& world) {
     // Load Assets
     //--------------
     UsdWrapper::LoadUsdFile("Scenes/SceneTemplates.usda", world);
+    UsdWrapper::LoadUsdFile("Scenes/SceneBackgrounds.usda", world);
     UsdWrapper::LoadUsdFile("Scenes/Scene1.usda", world);
     UsdWrapper::LoadUsdFile("Scenes/SceneUI.usda", world);
 
@@ -154,6 +155,7 @@ inline bool Quit_Systems(ecs::World& world) {
 inline void Handle_Input(ecs::World& world, float dt) {
 
     auto& input = world.get_resource<env::InputState>();
+    auto& stats = world.get_resource<env::Stats>();
     Vector2D mouse_pos;
     Vector2D mouse_rel;
     bool is_mouse_moved = false;
@@ -317,6 +319,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
     world.each<UI, GameCursor, Position, Sprite, Size>([&, dt](ecs::EntityID, UI& ui, GameCursor &game_cursor, Position& pos, Sprite &sprite, Size &size) {
        if (is_mouse_moved) {
            FunctionsLib::UpdatePosition(mouse_pos, pos, sprite, size.scale, true);
+           stats.mouse_screen_pos = mouse_pos;;
        }
 
     },  ecs::World::Exclude<Template>{});

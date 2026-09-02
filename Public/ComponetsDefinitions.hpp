@@ -18,6 +18,7 @@ struct NoMultithreading {
 
 struct Actor{};
 struct StaticObject {};
+struct Background {};
 struct Character {};
 struct Player {};
 struct Enemy {};

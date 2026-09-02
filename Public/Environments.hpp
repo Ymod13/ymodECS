@@ -40,6 +40,7 @@ namespace env
     struct Stats {
         float stats_timer = 0.0f;
         float fps = 0.0f;
+        Vector2D mouse_screen_pos;
 
         void UpdateStats( SDL_Renderer* renderer, const float& dt) {
             if (env::display_stats) {
@@ -53,6 +54,7 @@ namespace env
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
                 SDL_SetRenderScale(renderer, 2.0f, 2.0f);
                 SDL_RenderDebugTextFormat(renderer, 5.0f, 5.0f, "FPS: %.1f", fps);
+                SDL_RenderDebugTextFormat(renderer, 5.0f, 15.0f, "Mouse: x: %.0f; y: %.0f", mouse_screen_pos.x,  mouse_screen_pos.y);
                 SDL_SetRenderScale(renderer, 1.0f, 1.0f);
             }
         }

@@ -106,6 +106,9 @@ bool UsdWrapper::HandleEntityType(ecs::World &world, const ecs::EntityID &e, con
         } else  if (out_entity_type == "static_object") {
             world.add(e, Actor{});
             world.add(e, StaticObject{});
+        } else  if (out_entity_type == "background") {
+            world.add(e, Actor{});
+            world.add(e, Background{});
         } else  if (out_entity_type == "character") {
             world.add(e, Actor{});
             world.add(e, Character{});
