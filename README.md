@@ -11,3 +11,6 @@ Here is a recap of all the features:
 - Access system (first pass stage, not completely integrated in the engine)
 - Custom mouse pointer support
 - keyboard/mouse support
+
+- Updated Gameplay video:
+https://github.com/Ymod13/ymodECS/blob/main/Resources/ymodECS_gameplay.mp4
