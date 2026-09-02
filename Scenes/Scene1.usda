@@ -45,7 +45,7 @@ def "Scene" {
 		def "Sprite"
 		{
 			string filename = "space_chicken_2.png"
-			string collision_type = "RADIUS"
+			string collision_type = "MULTI_CIRCLE"
 			bool can_push = true
 			bool draw_debug_shapes = true
 		}
@@ -136,7 +136,7 @@ def "Scene" {
 		def "Sprite"
 		{
 			string filename = "tree_48x48.png"
-			string collision_type = "RADIUS"
+			string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
 			bool draw_debug_shapes = true
 		}
