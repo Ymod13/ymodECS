@@ -31,7 +31,6 @@ int main()
     }
 
     bool running = true;
-    SDL_Event event;
 
     using Clock = std::chrono::high_resolution_clock;
     using Seconds = std::chrono::duration<float>;

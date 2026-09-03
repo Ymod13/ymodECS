@@ -17,9 +17,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(USD_ROOT "D:/Stuff/Projects/USD_Debug")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/debug/bin")
+    set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Debug/lua54d.lib")
 else()
     set(USD_ROOT "D:/Stuff/Projects/USD_Release")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/bin")
+    set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Release/lua54.lib")
 endif()
 
 set(pxr_DIR "${USD_ROOT}")
@@ -65,6 +67,8 @@ target_compile_definitions(ymodECS PRIVATE
         TBB_SUPPRESS_DEPRECATED_MESSAGES=1
 )
 
+target_compile_definitions(ymodECS PRIVATE $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>)
+
 target_link_libraries(ymodECS PRIVATE
         SDL3::SDL3
         SDL3_image::SDL3_image
@@ -75,7 +79,7 @@ target_link_libraries(ymodECS PRIVATE
         ${USD_ROOT}/lib/usd_usd.lib
         ${USD_ROOT}/lib/usd_usdGeom.lib
         ${USD_ROOT}/lib/usd_sdf.lib
-        "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/lua54.lib"
+        ${LUA_LIB}
 )
 
 if(WIN32)
