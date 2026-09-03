@@ -1,12 +1,16 @@
 # Default ignored files
-cmake-build-*/ 
-build/ 
-out/ 
-.vs/ 
-*.obj 
-*.exe 
-*.pdb 
-*.ilk 
-.idea/ 
-CMakeFiles/ 
-CMakeCache.txt 
+cmake-build-*/
+build/
+out/
+.vs/
+*.obj
+*.exe
+*.pdb
+*.ilk
+.idea/
+CMakeFiles/
+CMakeCache.txt
+
+# dist/ dir must be published
+!dist/
+!dist/**
