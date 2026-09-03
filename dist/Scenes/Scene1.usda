@@ -1,0 +1,145 @@
+#usda 1.0
+(
+    doc = "ymodECS Scene"
+)
+
+def "Scene" {
+	 
+    def "Player" {
+		
+        string entity_type = "player"
+
+        def "Name"
+		{
+			 string name = "Hero"
+		}
+		
+		def "Position"
+		{
+			 float2 pos = (800.0, 600.0)
+		}
+		
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Velocity"
+		{
+			float2 vel = (0.0, 0.0)
+			float2 max_vel = (200.0, 200.0)
+			float2 acceleration = (1000.0, 1000.0)
+		}
+
+		def "Health"
+		{
+			int hp = 100
+			int max_hp = 100
+		}
+
+		def "Sprite"
+		{
+			string filename = "space_chicken_2.png"
+			string collision_type = "MULTI_CIRCLE"
+			bool can_push = true
+			bool draw_debug_shapes = true
+		}
+    }
+
+    def "Enemy_1" {
+        string entity_type = "enemy"
+
+        def "Name"
+		{
+			 string name = "Space Fox"
+		}
+		
+		def "Position"
+		{
+			 float2 pos = (400.0, 200.0)
+		}
+		
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Velocity"
+		{
+			float2 vel = (0.0, 10.0)
+			float2 max_vel = (0.0, 10.0)
+			float2 acceleration = (0.0, 0.0)
+		}
+
+		def "Health"
+		{
+			int hp = 50
+			int max_hp = 50
+		}
+		
+		def "Sprite"
+		{
+			string filename = "space_fox_2.png"
+			string collision_type = "RADIUS"
+			bool can_push = false
+			bool draw_debug_shapes = true	
+		}
+        
+    }
+	
+	def "Tree" {
+        string entity_type = "static_object"
+
+        def "Name"
+		{
+			 string name = "Tree"
+		}
+
+        def "Position"
+		{
+			 float2 pos = (100.0, 100.0)
+		}
+		
+        
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Velocity"
+		{
+        float2 vel = (0.0, 0.0)
+        float2 max_vel = (0.0, 0.0)
+		}
+
+		def "Health"
+		{
+			int hp = 10
+			int max_hp = 10
+		}
+
+		def "Sprite"
+		{
+			string filename = "tree_48x48.png"
+			string collision_type = "RECTANGLE"
+			bool is_static_obstacle = true
+			bool draw_debug_shapes = true
+		}
+    }
+	
+}

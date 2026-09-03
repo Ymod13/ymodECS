@@ -1,0 +1,46 @@
+#usda 1.0
+(
+    doc = "ymodECS UI Scene"
+)
+
+def "Scene" {
+	 
+	 def "Game_cursor" {
+		
+        string entity_type = "game_cursor"
+
+        def "Name"
+		{
+			 string name = "Mouse Pointer"
+		}
+
+        def "Position"
+		{
+			 float2 pos = (0.0, 0.0)
+		}
+		
+		
+		def "Size"
+		{
+			 float2 scale = (0.25, 0.25)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+		
+		def "GameCursor"
+		{
+			float2 hotspot = (0.0, 0.0)
+			bool is_enabled = true
+		}
+		
+		def "Sprite"
+		{
+			string filename = "MouseCursor1.png"
+			string collision_type = "NONE"
+			bool draw_debug_shapes = false
+		}
+	 }
+}

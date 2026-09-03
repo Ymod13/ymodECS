@@ -1,0 +1,37 @@
+#usda 1.0
+(
+    doc = "ymodECS Scene"
+)
+
+def "Scene" {
+	 
+    def "Grass" {
+		
+        string entity_type = "background"
+
+        def "Name"
+		{
+			 string name = "Grass_1"
+		}
+		
+		def "Position"
+		{
+			 float2 pos = (1100.0, 600.0)
+		}
+		
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Sprite"
+		{
+			string filename = "Grass_1_seamless_512.jpg"
+		}
+    }
+}

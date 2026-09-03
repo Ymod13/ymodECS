@@ -1,0 +1,67 @@
+#usda 1.0
+(
+    doc = "ymodECS Scene Templates"
+)
+
+def "Scene" {
+	 
+	def "PistolBullet" {
+		
+        string entity_type = "bullet"
+
+        def "Name"
+		{
+			 string name = "Pistol Bullet template"
+		}
+
+        def "Position"
+		{
+			 float2 pos = (0.0, 0.0)
+		}
+		
+		def "Template"
+		{
+		}
+		
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Velocity"
+		{
+			float2 vel = (1.0, 1.0)
+			float2 max_vel = (1.0, 1.0)
+			float2 acceleration = (1.0, 1.0)
+		}
+
+		def "Health"
+		{
+			int hp = 1
+			int max_hp = 1
+		}
+		
+		def "Bullet"
+		{
+			string bullet_type = "PISTOL"
+			float speed = 1000.0
+			int damage = 50
+			float area_radius = 0
+			int area_damage = 0
+			float lifespan = 2.0
+		}
+
+		def "Sprite"
+		{
+			string filename = "glowing_ball_2.png"
+			string collision_type = "RADIUS"
+			bool overlaps_only = true;
+			bool draw_debug_shapes = true
+		}
+    }
+}

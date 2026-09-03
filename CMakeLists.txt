@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.30)
 
 set(CMAKE_TOOLCHAIN_FILE "D:/Stuff/Projects/vcpkg/vcpkg-master/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 
+# Disattiva la copia automatica delle DLL vcpkg accanto all'exe: la gestiamo noi manualmente in bin/
+set(VCPKG_APPLOCAL_DEPS OFF CACHE BOOL "" FORCE)
+
 project(ymodECS CXX)
 
 if(POLICY CMP0167)
@@ -13,8 +16,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(USD_ROOT "D:/Stuff/Projects/USD_Debug")
+    set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/debug/bin")
 else()
     set(USD_ROOT "D:/Stuff/Projects/USD_Release")
+    set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/bin")
 endif()
 
 set(pxr_DIR "${USD_ROOT}")
@@ -73,36 +78,55 @@ target_link_libraries(ymodECS PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/lua54.lib"
 )
 
-# Copia DLL e plugin accanto all'eseguibile
 if(WIN32)
+    set(RUNTIME_DIR $<TARGET_FILE_DIR:ymodECS>)
+    set(BIN_DIR ${RUNTIME_DIR}/bin)
+    set(DIST_DIR ${CMAKE_SOURCE_DIR}/dist)
+
+    # Enumera le DLL in fase di configurazione (nessuna shell, nessun quoting)
+    file(GLOB USD_BIN_DLLS "${USD_ROOT}/bin/*.dll")
+    file(GLOB USD_LIB_DLLS "${USD_ROOT}/lib/*.dll")
+    file(GLOB VCPKG_DLLS   "${VCPKG_BIN_DIR}/*.dll")
+
+    set(ALL_DLLS ${USD_BIN_DLLS} ${USD_LIB_DLLS} ${VCPKG_DLLS})
+
     add_custom_command(TARGET ymodECS POST_BUILD
-            # DLL from bin\ (TBB, MaterialX)
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${USD_ROOT}/bin"
-            $<TARGET_FILE_DIR:ymodECS>
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${BIN_DIR}
+    )
 
-            # DLL from lib\ (usd_*.dll)
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${USD_ROOT}/lib"
-            $<TARGET_FILE_DIR:ymodECS>
+    foreach(dll ${ALL_DLLS})
+        add_custom_command(TARGET ymodECS POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${dll}" "${BIN_DIR}"
+        )
+    endforeach()
 
-            # USD plugin (necessaries at runtime)
+    add_custom_command(TARGET ymodECS POST_BUILD
+            # Plugin USD (necessari a runtime, path separato dalle DLL)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/plugin/usd"
-            "$<TARGET_FILE_DIR:ymodECS>/usd"
+            "${RUNTIME_DIR}/usd"
 
-            # Resources directories copy
+            # Asset
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Scripts
-            $<TARGET_FILE_DIR:ymodECS>/Scripts
+            ${CMAKE_SOURCE_DIR}/Scripts ${RUNTIME_DIR}/Scripts
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Scenes
-            $<TARGET_FILE_DIR:ymodECS>/Scenes
+            ${CMAKE_SOURCE_DIR}/Scenes ${RUNTIME_DIR}/Scenes
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Sprites
-            $<TARGET_FILE_DIR:ymodECS>/Sprites
+            ${CMAKE_SOURCE_DIR}/Sprites ${RUNTIME_DIR}/Sprites
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Resources
-            $<TARGET_FILE_DIR:ymodECS>/Resources
+            ${CMAKE_SOURCE_DIR}/Resources ${RUNTIME_DIR}/Resources
+    )
+
+    # Target separato: crea/aggiorna dist/ nella root del repo, SOLO quando lo lanci esplicitamente
+    add_custom_target(package
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${DIST_DIR}
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ymodECS> ${DIST_DIR}/
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${BIN_DIR} ${DIST_DIR}/bin
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/usd ${DIST_DIR}/usd
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Resources ${DIST_DIR}/Resources
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Scenes ${DIST_DIR}/Scenes
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Scripts ${DIST_DIR}/Scripts
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Sprites ${DIST_DIR}/Sprites
+            DEPENDS ymodECS
     )
 endif()
