@@ -9,9 +9,12 @@ extern "C" {
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+
 }
 
 #include <iostream>
+#include <sol/sol.hpp>
+
 
 #include "Environments.hpp"
 
@@ -79,6 +82,21 @@ namespace LuaUtils {
             else
                 std::cerr << "[Lua] GetLuaVariable: " << in_variable_name << " is not a boolean\n";
         }
+        else if constexpr (std::is_same_v<T, Vector2D>) {
+            if (sol::stack::check<Vector2D>(in_lua_state, -1)) {
+
+                out_variable = sol::stack::get<Vector2D>(in_lua_state, -1);
+
+                if (env::display_lua_debug_messages) {
+                    std::cout << "[Lua] GetLuaVariable: " << in_variable_name
+                              << " (Vector2D): (" << out_variable.x << ", " << out_variable.y << ")"
+                              << std::endl;
+                }
+
+            }
+            else
+                std::cerr << "[Lua] GetLuaVariable: " << in_variable_name << " is not a Vector2D\n";
+        }
         else {
             std::cerr << "[Lua] GetLuaVariable: Type '" << type_name<T>() << "' not supported for '" << in_variable_name << "'\n";
             static_assert(false, "[Lua] GetLuaVariable: type not supported!'");
@@ -86,6 +104,8 @@ namespace LuaUtils {
 
         lua_pop(in_lua_state, 1); // clears the stack removing the top element
     };
+
+    void RegisterVector2D(sol::state_view& lua);
 
     void LoadLuaConfig(lua_State* in_lua_state);
 }

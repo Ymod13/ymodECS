@@ -49,6 +49,7 @@ target_include_directories(ymodECS SYSTEM PRIVATE
 target_include_directories(ymodECS PRIVATE
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        "D:/Stuff/Projects/sol2-develop/include"
 )
 
 target_compile_definitions(ymodECS PRIVATE
@@ -75,17 +76,33 @@ target_link_libraries(ymodECS PRIVATE
 # Copia DLL e plugin accanto all'eseguibile
 if(WIN32)
     add_custom_command(TARGET ymodECS POST_BUILD
-            # DLL da bin\ (TBB, MaterialX)
+            # DLL from bin\ (TBB, MaterialX)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/bin"
             $<TARGET_FILE_DIR:ymodECS>
-            # DLL da lib\ (usd_*.dll)
+
+            # DLL from lib\ (usd_*.dll)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/lib"
             $<TARGET_FILE_DIR:ymodECS>
-            # Plugin USD (necessari a runtime)
+
+            # USD plugin (necessaries at runtime)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/plugin/usd"
             "$<TARGET_FILE_DIR:ymodECS>/usd"
+
+            # Resources directories copy
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/Scripts
+            $<TARGET_FILE_DIR:ymodECS>/Scripts
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/Scenes
+            $<TARGET_FILE_DIR:ymodECS>/Scenes
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/Sprites
+            $<TARGET_FILE_DIR:ymodECS>/Sprites
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/Resources
+            $<TARGET_FILE_DIR:ymodECS>/Resources
     )
 endif()

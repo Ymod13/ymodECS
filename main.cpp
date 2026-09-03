@@ -8,6 +8,8 @@
 
 int main()
 {
+    SetDllDirectoryA("bin");
+
     std::cout << "Starting...\n";
 
     ecs::World game_world;

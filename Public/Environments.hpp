@@ -27,6 +27,9 @@ namespace env
     inline int screen_height = 1200;
     inline bool is_fullscreen = false;
 
+    inline Vector2D map_size = Vector2D(10000, 10000);
+    inline Vector2D camera_pos = Vector2D(0, 0); // screen represents camera view. this pos represents top-left corner of the camera
+
     inline bool is_text_debug = false;
     inline bool is_input_text_debug = false;
     inline bool display_lua_debug_messages = false;

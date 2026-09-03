@@ -16,6 +16,10 @@ lua_State* LuaUtils::InitLua() {
 
     luaL_openlibs(lua_state);
 
+    // Wrappa lo stato raw con sol2 per poter registrare tipi/funzioni
+    sol::state_view lua(lua_state);
+    RegisterVector2D(lua);   // vedi sotto
+
     return lua_state;
 }
 //------------------------------------------------------------------------------------------------------------------------
@@ -30,6 +34,27 @@ void LuaUtils::CloseLua(lua_State* in_lua_state) {
     lua_close(in_lua_state);
 
     std::cout << "[C++] Lua Closed." << std::endl;
+}
+//------------------------------------------------------------------------------------------------------------------------
+
+void LuaUtils::RegisterVector2D(sol::state_view& lua) {
+    lua.new_usertype<Vector2D>("Vector2D",
+        sol::constructors<Vector2D(), Vector2D(float, float)>(),
+
+        "x", &Vector2D::x,
+        "y", &Vector2D::y,
+
+        "length", &Vector2D::length,
+        "normalize", &Vector2D::normalize,
+
+        sol::meta_function::addition, &Vector2D::operator+,
+        sol::meta_function::subtraction, [](const Vector2D& a, const Vector2D& b) { return a - b; },
+        sol::meta_function::multiplication, [](const Vector2D& v, float scalar) { return v * scalar; },
+
+        sol::meta_function::to_string, [](const Vector2D& v) {
+            return "Vector2D(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
+        }
+    );
 }
 //------------------------------------------------------------------------------------------------------------------------
 
@@ -61,6 +86,10 @@ void LuaUtils::LoadLuaConfig(lua_State* in_lua_state) {
     GetLuaVariable<int>(in_lua_state, "screen_width", env::screen_width);
     GetLuaVariable<int>(in_lua_state, "screen_height", env::screen_height);
     GetLuaVariable<bool>(in_lua_state, "is_fullscreen", env::is_fullscreen);
+
+    // CAMERA
+    GetLuaVariable<Vector2D>(in_lua_state, "map_size", env::map_size);
+    GetLuaVariable<Vector2D>(in_lua_state, "camera_pos", env::camera_pos);
 
     // FOLDERS
     GetLuaVariable<std::string>(in_lua_state, "sprites_folder", env::sprites_folder);

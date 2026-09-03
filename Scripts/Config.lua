@@ -4,6 +4,8 @@
 window_title = "Ympd ECS prototype"
 screen_width = 2200
 screen_height = 1200
+map_size =  Vector2D.new(5000.0, 5000.0)
+camera_pos =  Vector2D.new(1000.0, 1000.0)
 is_fullscreen = false
 
 -- FOLDERS

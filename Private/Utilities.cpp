@@ -19,8 +19,8 @@ void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite
     pos.old_pos = pos.pos;
     pos.pos = new_pos;
 
-    // Clamp position to screen limits
-    clamp_screen_position(pos.pos, scale, sprite.texture.get());
+    // OPTIONAL: Clamp position to screen limits
+    //clamp_screen_position(pos.pos, scale, sprite.texture.get());
 
     sprite.rect.x = sprite.scaled_rect.x = pos.pos.x;
     sprite.rect.y = sprite.scaled_rect.y = pos.pos.y;
