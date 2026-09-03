@@ -14,6 +14,8 @@ Here is a recap of all the features:
 
 - Updated Gameplay video in "/Resources" folder
 
+- exe file for testing in ymodECS/dist/ymodECS.exe
+
 https://github.com/user-attachments/assets/9eb38edc-7444-4ea3-bf36-2a0c7e053ed8
 
 
