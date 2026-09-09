@@ -136,5 +136,13 @@ namespace Collisions {
     };
 }
 
+namespace UserInterface {
+    enum LayerType {
+        NONE = 0,
+        Background,
+        World,
+        UI
+    };
+}
 
 #endif //YMODECS_ENVIRONMENTS_HPP

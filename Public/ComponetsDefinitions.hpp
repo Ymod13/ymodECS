@@ -151,4 +151,9 @@ struct GameCursor
     bool is_enabled;
 };
 
+struct ZOrder {
+    int layer = 0;      // livello grosso: Background, World, Effects, UI...
+    float depth = 0.0f; // ordinamento fine dentro al layer
+};
+
 #endif //YMODECS_COMPONETSDEFINITIONS_HPP

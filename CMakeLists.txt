@@ -15,13 +15,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(VCPKG_TARGET_TRIPLET "x64-windows") # Vcpkg capirà da solo di pescare da /debug/lib
     set(USD_ROOT "D:/Stuff/Projects/USD_Debug")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/debug/bin")
     set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Debug/lua54d.lib")
+
 else()
+
     set(USD_ROOT "D:/Stuff/Projects/USD_Release")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/bin")
     set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Release/lua54.lib")
+
 endif()
 
 set(pxr_DIR "${USD_ROOT}")
@@ -67,8 +71,6 @@ target_compile_definitions(ymodECS PRIVATE
         TBB_SUPPRESS_DEPRECATED_MESSAGES=1
 )
 
-target_compile_definitions(ymodECS PRIVATE $<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>)
-
 target_link_libraries(ymodECS PRIVATE
         SDL3::SDL3
         SDL3_image::SDL3_image
@@ -79,6 +81,7 @@ target_link_libraries(ymodECS PRIVATE
         ${USD_ROOT}/lib/usd_usd.lib
         ${USD_ROOT}/lib/usd_usdGeom.lib
         ${USD_ROOT}/lib/usd_sdf.lib
+        ${USD_ROOT}/lib/usd_plug.lib
         ${LUA_LIB}
 )
 
@@ -87,7 +90,6 @@ if(WIN32)
     set(BIN_DIR ${RUNTIME_DIR}/bin)
     set(DIST_DIR ${CMAKE_SOURCE_DIR}/dist)
 
-    # Enumera le DLL in fase di configurazione (nessuna shell, nessun quoting)
     file(GLOB USD_BIN_DLLS "${USD_ROOT}/bin/*.dll")
     file(GLOB USD_LIB_DLLS "${USD_ROOT}/lib/*.dll")
     file(GLOB VCPKG_DLLS   "${VCPKG_BIN_DIR}/*.dll")
@@ -100,12 +102,13 @@ if(WIN32)
 
     foreach(dll ${ALL_DLLS})
         add_custom_command(TARGET ymodECS POST_BUILD
+                # Copy in bin/ (for distribution)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${dll}" "${BIN_DIR}"
         )
     endforeach()
 
     add_custom_command(TARGET ymodECS POST_BUILD
-            # Plugin USD (necessari a runtime, path separato dalle DLL)
+            # Plugin USD Plugins (necessary at runtime, separated path from dll's)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/plugin/usd"
             "${RUNTIME_DIR}/usd"
@@ -121,7 +124,7 @@ if(WIN32)
             ${CMAKE_SOURCE_DIR}/Resources ${RUNTIME_DIR}/Resources
     )
 
-    # Target separato: crea/aggiorna dist/ nella root del repo, SOLO quando lo lanci esplicitamente
+    # Separated Target : make/update dist/ into repo's root, ONLY if launched explicitly
     add_custom_target(package
             COMMAND ${CMAKE_COMMAND} -E make_directory ${DIST_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ymodECS> ${DIST_DIR}/

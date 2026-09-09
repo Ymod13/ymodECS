@@ -13,27 +13,28 @@
 PXR_NAMESPACE_USING_DIRECTIVE
 
 bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
-    std::cout << "\n=== USD Loader: " << filepath << " ===\n";
+    std::cout << "\n=== USD Loader: Looking for  " << filepath << " ===" << std::endl;
 
-    UsdStageRefPtr stage = UsdStage::Open(filepath);
+    UsdStageRefPtr stage = UsdStage::Open(std::string(filepath));
+
     if (!stage) {
-        std::cerr << "FAIL: impossibile aprire " << filepath << "\n";
+        std::cerr << "FAIL: impossible to open " << filepath << std::endl;
         return false;
     }
     else {
-        std::cout << "file aperto correttamente! -> " << filepath << "\n";
+        std::cout << "stage opened correctly! -> " << filepath << std::endl;
     }
 
     UsdPrim scene = stage->GetPrimAtPath(SdfPath("/Scene"));
     if (!scene) {
-        std::cerr << "FAIL: prim /Scene non trovato\n";
+        std::cerr << "FAIL: prim /Scene not found" << std::endl;
         return false;
     }
 
     for (const UsdPrim& prim : scene.GetChildren()) {
 
         std::string primName = prim.GetName().GetString();
-        std::cout << "\nLoading prim: " << primName << "\n";
+        std::cout << "\nLoading prim: " << primName << std::endl;
 
         // Create the entity in game world
         ecs::EntityID e = world.create();

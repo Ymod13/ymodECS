@@ -3,12 +3,41 @@
 #include <iostream>
 #include <string>
 
+#include <pxr/base/plug/registry.h>
+#include <pxr/base/plug/plugin.h>
+#include <pxr/base/tf/debug.h>
+#include <filesystem>
+
 #include "Systems.hpp"
 
+void InitUsdSubsystem()
+{
+#if defined(_DEBUG)
+    std::cout << "[C++] Registering USD plugins (Debug)..." << std::endl;
+    const std::vector<std::string> pluginPaths = {
+        "D:/Stuff/Projects/USD_Debug/plugin/usd",
+        "D:/Stuff/Projects/USD_Debug/lib/usd"
+    };
+#else
+    std::cout << "[C++] Registering USD plugins (Release)..." << std::endl;
+    const std::vector<std::string> pluginPaths = {
+        "D:/Stuff/Projects/USD_Release/plugin/usd",
+        "D:/Stuff/Projects/USD_Release/lib/usd"
+    };
+#endif
+
+    auto& registry = PlugRegistry::GetInstance();
+    auto newPlugins = registry.RegisterPlugins(pluginPaths);
+
+    std::cout << "[C++] Registered USD plugins: " << newPlugins.size() << std::endl;
+    for (const auto& plug : newPlugins) {
+        std::cout << "  - " << plug->GetName() << std::endl;
+    }
+}
 
 int main()
 {
-    SetDllDirectoryA("bin");
+    InitUsdSubsystem();
 
     std::cout << "Starting...\n";
 
