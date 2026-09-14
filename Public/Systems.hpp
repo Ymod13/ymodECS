@@ -14,6 +14,9 @@
 #include "LuaUtils.hpp"
 #include "Scheduler.hpp"
 #include "UsdWrapper.hpp"
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_sdlrenderer3.h"
 
 
 // Systems declarations
@@ -84,6 +87,20 @@ inline bool Init_Systems(ecs::World& world) {
 
     SDL_StopTextInput(window);
 
+    //ImGUI init
+    //-----------
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
+    ImGui_ImplSDLRenderer3_Init(renderer);
+
+
+    // World resources
     world.add_resource(env::SDLContext{window, renderer});
     world.add_resource(env::InputState{});
     world.add_resource(env::Stats{});
@@ -157,6 +174,10 @@ inline bool Quit_Systems(ecs::World& world) {
     });
     */
 
+    ImGui_ImplSDLRenderer3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
+
     auto& ctx = world.get_resource<env::SDLContext>();
     SDL_DestroyRenderer(ctx.renderer);
     SDL_DestroyWindow(ctx.window);
@@ -181,24 +202,12 @@ inline void Handle_Input(ecs::World& world, float dt) {
     while (SDL_PollEvent(&input.event)) {
         //std::cout << "input: event type = " << input.event.type << "\n";
 
-        switch (input.event.type) {
+        ImGui_ImplSDL3_ProcessEvent(&input.event);
 
+
+        switch (input.event.type) {
             case SDL_EVENT_QUIT:
                 input.quit = true;
-                break;
-
-            case SDL_EVENT_MOUSE_MOTION:
-                mouse_pos = Vector2D(input.event.motion.x, input.event.motion.y);
-                mouse_rel = Vector2D(input.event.motion.xrel, input.event.motion.yrel);
-                is_mouse_moved = true;
-                break;
-
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                if (input.event.button.button == SDL_BUTTON_LEFT) {
-                    // left click
-                    Vector2D dest_pos = Vector2D(input.event.motion.x, input.event.motion.y);
-                    FunctionsLib::SpawnBullet(world, env::player_id, env::PISTOL, env::player_pos, dest_pos);
-                }
                 break;
 
             case SDL_EVENT_KEY_DOWN:
@@ -210,134 +219,169 @@ inline void Handle_Input(ecs::World& world, float dt) {
                         input.quit = true;
                         break;
 
-                    case SDLK_UP:
-                    case SDLK_W:
-                        if (env::is_input_text_debug) {
-                            SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"UP pressed");
-                        }
-                        break;
-
-                    case SDLK_DOWN:
-                    case SDLK_S:
-                        if (env::is_input_text_debug) {
-                            SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"DOWN pressed");
-                        }
-                        break;
-
-                    case SDLK_LEFT:
-                    case SDLK_A:
-                        if (env::is_input_text_debug) {
-                            SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"LEFT pressed");
-                        }
-                        break;
-
-                    case SDLK_RIGHT:
-                    case SDLK_D:
-                        if (env::is_input_text_debug) {
-                           SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"RIGHT pressed");
-                        }
-                        break;
-
-                    case SDLK_SPACE:
-                        if (env::is_input_text_debug) {
-                            SDL_LogInfo(SDL_LOG_CATEGORY_INPUT, "SPACE pressed");
-                        }
+                    case SDLK_F1:
+                        env::show_imgui = !env::show_imgui;
                         break;
                 }
                 break;
 
-            case SDL_EVENT_KEY_UP:
-                switch (input.event.key.key) {
-                    case SDLK_UP:
-                    case SDLK_W:
+            case SDL_EVENT_MOUSE_MOTION:
+                mouse_pos = Vector2D(input.event.motion.x, input.event.motion.y);
+                mouse_rel = Vector2D(input.event.motion.xrel, input.event.motion.yrel);
+                is_mouse_moved = true;
+                break;
+        }
+
+        if (!env::show_imgui) {
+
+            // game logic input handling
+            //---------------------------
+            switch (input.event.type) {
+
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    if (input.event.button.button == SDL_BUTTON_LEFT) {
+                        // left click
+                        Vector2D dest_pos = Vector2D(input.event.motion.x, input.event.motion.y);
+                        FunctionsLib::SpawnBullet(world, env::player_id, env::PISTOL, env::player_pos, dest_pos);
+                    }
+                    break;
+
+                case SDL_EVENT_KEY_DOWN:
+                    if (input.event.key.repeat) {
+                        break; // ignore automatic key repetition
+                    }
+                    switch (input.event.key.key) {
+                        case SDLK_UP:
+                        case SDLK_W:
+                            if (env::is_input_text_debug) {
+                                SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"UP pressed");
+                            }
+                            break;
+
+                        case SDLK_DOWN:
+                        case SDLK_S:
+                            if (env::is_input_text_debug) {
+                                SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"DOWN pressed");
+                            }
+                            break;
+
+                        case SDLK_LEFT:
+                        case SDLK_A:
+                            if (env::is_input_text_debug) {
+                                SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"LEFT pressed");
+                            }
+                            break;
+
+                        case SDLK_RIGHT:
+                        case SDLK_D:
+                            if (env::is_input_text_debug) {
+                                SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"RIGHT pressed");
+                            }
+                            break;
+
+                        case SDLK_SPACE:
+                            if (env::is_input_text_debug) {
+                                SDL_LogInfo(SDL_LOG_CATEGORY_INPUT, "SPACE pressed");
+                            }
+                            break;
+                    }
+                    break;
+
+                case SDL_EVENT_KEY_UP:
+                    switch (input.event.key.key) {
+                        case SDLK_UP:
+                        case SDLK_W:
                             if (env::is_input_text_debug) {
                                 SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"UP released");
                             }
                             break;
 
-                    case SDLK_DOWN:
-                    case SDLK_S:
+                        case SDLK_DOWN:
+                        case SDLK_S:
                             if (env::is_input_text_debug) {
                                 SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"DOWN released");
                             }
                             break;
 
-                    case SDLK_LEFT:
-                    case SDLK_A:
+                        case SDLK_LEFT:
+                        case SDLK_A:
                             if (env::is_input_text_debug) {
                                 SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"LEFT released");
                             }
                             break;
 
-                    case SDLK_RIGHT:
-                    case SDLK_D:
+                        case SDLK_RIGHT:
+                        case SDLK_D:
                             if (env::is_input_text_debug) {
                                 SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"RIGHT released");
                             }
                             break;
 
-                    case SDLK_SPACE:
+                        case SDLK_SPACE:
                             if (env::is_input_text_debug) {
                                 SDL_LogInfo(SDL_LOG_CATEGORY_INPUT,"SPACE released");
                             }
                             break;
-                }
-                break;
-
-                /*
-            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                switch (event.gbutton.button) {
-                case SDL_GAMEPAD_BUTTON_SOUTH: // Equivalent to A on Xbox or Cross on PS
-                        SDL_Log("Bottom button (A/Cross) pressed");
-                        break;
-                case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-                        SDL_Log("D-Pad Left pressed");
-                        break;
-                }
-                break;
-
-            case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
-                const int DEADZONE = 8000;
-                // In SDL3 the axis macros use the SDL_GAMEPAD_AXIS_ prefix
-                if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX) {
-                    if (event.gaxis.value < -DEADZONE) {
-                        SDL_Log("Left stick: WEST");
-                    } else if (event.gaxis.value > DEADZONE) {
-                        SDL_Log("Left stick: EAST");
                     }
+                    break;
+
+                    /*
+                case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                    switch (event.gbutton.button) {
+                    case SDL_GAMEPAD_BUTTON_SOUTH: // Equivalent to A on Xbox or Cross on PS
+                            SDL_Log("Bottom button (A/Cross) pressed");
+                            break;
+                    case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+                            SDL_Log("D-Pad Left pressed");
+                            break;
+                    }
+                    break;
+
+                case SDL_EVENT_GAMEPAD_AXIS_MOTION: {
+                    const int DEADZONE = 8000;
+                    // In SDL3 the axis macros use the SDL_GAMEPAD_AXIS_ prefix
+                    if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX) {
+                        if (event.gaxis.value < -DEADZONE) {
+                            SDL_Log("Left stick: WEST");
+                        } else if (event.gaxis.value > DEADZONE) {
+                            SDL_Log("Left stick: EAST");
+                        }
+                    }
+                    break;
                 }
-                break;
+
+                    // 5. HOT-PLUG HANDLING IN SDL3
+                case SDL_EVENT_GAMEPAD_ADDED:
+
+                    if (!gGamepad) {
+                        // e.gdevice.which directly contains the correct instance ID
+                        gGamepad = SDL_OpenGamepad(e.gdevice.which);
+                        if (gGamepad) {
+                            SDL_Log("Gamepad connected: %s", SDL_GetGamepadName(gGamepad));
+                        }
+                    }
+
+                    break;
+
+                case SDL_EVENT_GAMEPAD_REMOVED:
+
+                    if (gGamepad && e.gdevice.which == SDL_GetGamepadID(gGamepad)) {
+                        SDL_CloseGamepad(gGamepad);
+                        gGamepad = NULL;
+                        SDL_Log("Gamepad disconnected!");
+                    }
+                    break;
+                    */
             }
-
-                // 5. HOT-PLUG HANDLING IN SDL3
-            case SDL_EVENT_GAMEPAD_ADDED:
-
-                if (!gGamepad) {
-                    // e.gdevice.which directly contains the correct instance ID
-                    gGamepad = SDL_OpenGamepad(e.gdevice.which);
-                    if (gGamepad) {
-                        SDL_Log("Gamepad connected: %s", SDL_GetGamepadName(gGamepad));
-                    }
-                }
-
-                break;
-
-            case SDL_EVENT_GAMEPAD_REMOVED:
-
-                if (gGamepad && e.gdevice.which == SDL_GetGamepadID(gGamepad)) {
-                    SDL_CloseGamepad(gGamepad);
-                    gGamepad = NULL;
-                    SDL_Log("Gamepad disconnected!");
-                }
-                break;
-                */
         }
+
     }
 
-    world.each<UI, GameCursor, Position, Sprite, Size>([&, dt](ecs::EntityID, UI& ui, GameCursor &game_cursor, Position& pos, Sprite &sprite, Size &size) {
+    world.each<UI, GameCursor, Position, Sprite, Size>([&, dt](ecs::EntityID e, UI& ui, GameCursor &game_cursor, Position& pos, Sprite &sprite, Size &size) {
        if (is_mouse_moved) {
            FunctionsLib::UpdatePosition(mouse_pos, pos, sprite, size.scale, true);
            stats.mouse_screen_pos = mouse_pos;;
+           UserInterface::MouseCursorId = e;
        }
 
     },  ecs::World::Exclude<Template>{});
@@ -353,14 +397,16 @@ inline void Update_Player_Movement(ecs::World& world, float dt)
 
     world.each<Player, Position, Velocity, Sprite, Size>([input, dt](ecs::EntityID, Player& player, Position& pos, Velocity& vel, Sprite &sprite, Size &size)
     {
-        // y axis movement
-        FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.max_vel.y, dt);
+        if (!env::show_imgui) {
+            // y axis movement
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.max_vel.y, dt);
 
-        // x axis movement
-        FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.max_vel.x, dt);
+            // x axis movement
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.max_vel.x, dt);
 
-        // Update position
-        FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
+            // Update position
+            FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
+        }
 
         env::player_pos = sprite.center;
 
@@ -562,21 +608,32 @@ inline void Render_Scene(ecs::World& world, float dt)
     auto& stats = world.get_resource<env::Stats>();
     auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
 
-    SDL_HideCursor();
+    // --- ImGui: frame start UI building ---
+    ImGui_ImplSDLRenderer3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    // custom UI here (ex. ecsInspector.Draw(world))
+    if (env::show_imgui) {
+        ImGui::ShowDemoWindow();
+    }
+
+    auto& cursorVis = world.get<Visibility>(UserInterface::MouseCursorId);
+    cursorVis.is_visible = !env::show_imgui;
+
+    static bool was_showing_cursor = false;
+    if (env::show_imgui != was_showing_cursor) {
+        if (env::show_imgui) {
+            SDL_ShowCursor();
+        }
+        else {
+            SDL_HideCursor();
+        }
+        was_showing_cursor = env::show_imgui;
+    }
 
     SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
     SDL_RenderClear(ctx.renderer);
-
-    if (env::is_text_debug) {
-        std::cout << "\n-- Tick dt:" << dt << " -----------------------------------------------------------\n";
-    }
-
-    /*
-    world.each<Actor, Name, Size, Sprite, Visibility>([&ctx](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility)
-    {
-        FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
-    },  ecs::World::Exclude<Template>{});
-*/
 
     for (auto& r : renderables) {
         auto& sprite = world.get<Sprite>(r.entity);
@@ -586,6 +643,11 @@ inline void Render_Scene(ecs::World& world, float dt)
     }
 
     stats.UpdateStats(ctx.renderer, dt);
+
+    ImGui::Render();
+
+    // --- ImGui: draw on top of the already rendered scene
+    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ctx.renderer);
 
     SDL_RenderPresent(ctx.renderer);
 }

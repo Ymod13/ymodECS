@@ -35,6 +35,7 @@ namespace env
     inline bool display_lua_debug_messages = false;
     inline bool display_stats = true;
     inline float stats_display_interval = 0.5f;
+    inline bool show_imgui = true;
 
     inline Vector2D player_pos;
     inline ecs::EntityID player_id;
@@ -137,6 +138,9 @@ namespace Collisions {
 }
 
 namespace UserInterface {
+
+    inline ecs::EntityID MouseCursorId=ecs::EntityID();
+
     enum LayerType {
         NONE = 0,
         BACKGROUND,
