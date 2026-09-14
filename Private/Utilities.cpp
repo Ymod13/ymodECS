@@ -501,21 +501,31 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
     Sprite bullet_sprite;
     Size bullet_size;
     Velocity bullet_velocity;
+    ZOrder bullet_z_order;
 
-    world.each<Template, Bullet, Sprite, Size, Velocity>([&](ecs::EntityID id, Template &template_comp, Bullet& bullet, Sprite &sprite, Size &size, Velocity &velocity) {
+    bool is_template_found = false;
+
+    world.each<Template, Bullet, Sprite, Size, Velocity, ZOrder>([&](ecs::EntityID id, Template &template_comp, Bullet& bullet, Sprite &sprite, Size &size, Velocity &velocity, ZOrder &z_order) {
 
         if (bullet_type == bullet.bullet_type) {
-
             bullet_sprite.CopyData(&sprite);
             bullet_size.CopyData(&size);
             bullet_velocity.CopyData(&velocity);
+            bullet_z_order.CopyData(&z_order);
             new_bullet.CopyData(&bullet);
+            is_template_found = true;
             return false; // exits each loop
         }
 
         return true;
 
     });
+
+    if (!is_template_found) {
+        std::cerr << "Error: no template found for bullet_type: " << static_cast<int>(bullet_type) << std::endl;
+        world.destroy(e);
+        return;
+    }
 
     new_bullet.owner_id = owner_id;
 
@@ -530,9 +540,14 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
         bullet_velocity.vel = bullet_dir * new_bullet.speed;;
 
         world.add(e, std::move(bullet_velocity));
+
+        auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
+        renderables.push_back({e, bullet_z_order.layer, bullet_z_order.depth});
+
+        // TODO: reorder renderables
     }
     else {
-        std::cout << "Error loading bullet sprite" << std::endl;
+        std::cerr << "Error loading bullet sprite" << std::endl;
     }
 
 
@@ -540,7 +555,7 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
 }
 // -------------------------------------------------------------------------------------------------------------
 
-void FunctionsLib::DrawCircle(SDL_Renderer* renderer, Vector2D &center, float radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+void FunctionsLib::DrawCircle(SDL_Renderer* renderer, const Vector2D &center, float radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 
     SDL_SetRenderDrawColor(renderer, r, g, b, a);
 
@@ -580,6 +595,49 @@ void FunctionsLib::DrawCirclesCluster(SDL_Renderer *renderer, const Sprite &obj,
     auto debugCircles = GetWorldColliders(obj);
     for (auto& c : debugCircles) {
         DrawCircle(renderer, c.center, c.radius, r, g, b, a);
+    }
+}
+// -------------------------------------------------------------------------------------------------------------
+
+void FunctionsLib::DrawSprite(SDL_Renderer *renderer, const Sprite &sprite, const Name &name, const Visibility &visibility) {
+
+    if (!visibility.is_visible) {
+        return;
+    }
+
+    if (SDL_Texture *sprite_texture = sprite.texture.get()) {
+
+        //  a pointer to a point indicating the point around which dstrect will be rotated (if NULL, rotation will be done around dstrect.w/2, dstrect.h/2).
+        SDL_FPoint* rotation_center = NULL;
+
+        // Draws the rotated texture on the GPU
+        if (SDL_RenderTextureRotated(renderer, sprite_texture, NULL, &sprite.scaled_rect, sprite.angle, rotation_center, SDL_FLIP_NONE)) {
+        //if (SDL_RenderTexture(ctx.renderer, SpriteTexture, nullptr, &sprite.scaled_rect)) {
+            if (env::is_text_debug) {
+                std::cout << "  ->Sprite rendered: " << name.name <<  " - pos: " << sprite.scaled_rect.x << "; " << sprite.scaled_rect.y <<
+                " - size: "<< sprite.scaled_rect.w << "; " << sprite.scaled_rect.h << "\n";
+            }
+
+            if (sprite.draw_debug_shapes) {
+                switch (sprite.collision_type) {
+                    case Collisions::RADIUS:
+                        FunctionsLib::DrawCircle(renderer, sprite.center, sprite.bounding_radius);
+                        break;
+                    case Collisions::RECTANGLE:
+                        FunctionsLib::DrawRectangle(renderer, sprite.scaled_rect);
+                        break;
+                    case Collisions::MULTI_CIRCLE:
+                        FunctionsLib::DrawCirclesCluster(renderer, sprite);
+                        break;
+                }
+            }
+        }
+        else {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error rendering Texture: %s", SDL_GetError());
+        }
+    }
+    else {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error loading Texture: %s", sprite.filename.c_str());
     }
 }
 // -------------------------------------------------------------------------------------------------------------

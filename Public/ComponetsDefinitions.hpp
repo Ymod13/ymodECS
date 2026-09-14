@@ -152,8 +152,13 @@ struct GameCursor
 };
 
 struct ZOrder {
-    int layer = 0;      // livello grosso: Background, World, Effects, UI...
-    float depth = 0.0f; // ordinamento fine dentro al layer
+    UserInterface::LayerType layer = UserInterface::LayerType::NONE;
+    float depth = 0.0f; // Fine tuning inside a layer
+
+    void CopyData(const ZOrder *in_z_order) {
+        layer = in_z_order->layer;
+        depth = in_z_order->depth;
+    }
 };
 
 #endif //YMODECS_COMPONETSDEFINITIONS_HPP

@@ -85,6 +85,17 @@ public:
                         else if (field.value == "MULTI_CIRCLE") coll_type = Collisions::MULTI_CIRCLE;
 
                         component.*(field.member) = coll_type;
+                    }
+                    else if constexpr (std::is_same_v<typename Fields::Type, UserInterface::LayerType> &&  std::is_same_v<ValueType, std::string>) {
+                        UserInterface::LayerType layer_type = UserInterface::LayerType::NONE;
+
+                        if      (field.value == "BACKGROUND")   layer_type = UserInterface::LayerType::BACKGROUND;
+                        else if (field.value == "WORLD_STATIC") layer_type = UserInterface::LayerType::WORLD_STATIC;
+                        else if (field.value == "WORLD_DYNAMIC") layer_type = UserInterface::LayerType::WORLD_DYNAMIC;
+                        else if (field.value == "FOREGROUND") layer_type = UserInterface::LayerType::FOREGROUND;
+                        else if (field.value == "UI") layer_type = UserInterface::LayerType::UI;
+
+                        component.*(field.member) = layer_type;
                     } else {
                         component.*(field.member) = field.value;
                     }

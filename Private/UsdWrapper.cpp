@@ -89,6 +89,10 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
             UsdWrapper::LoadComponentPrim<GameCursor>(world, e, prim, "GameCursor",
             FieldPack<GameCursor, GfVec2f, Vector2D>{"hotspot", &GameCursor::hotspot},
             FieldPack<GameCursor, bool, bool>{"is_enabled", &GameCursor::is_enabled});
+
+           UsdWrapper::LoadComponentPrim<ZOrder>(world, e, prim, "ZOrder",
+           FieldPack<ZOrder, std::string, UserInterface::LayerType>{"layer", &ZOrder::layer},
+           FieldPack<ZOrder, float, float>{"depth", &ZOrder::depth});
         }
     }
 

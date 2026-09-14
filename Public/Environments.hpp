@@ -15,6 +15,12 @@
 using namespace MathUtils;
 namespace ecs {
     using EntityID    = std::uint32_t;
+
+    struct RenderableEntry {
+        EntityID entity;
+        int layer;
+        float depth;
+    };
 }
 
 namespace env
@@ -139,8 +145,10 @@ namespace Collisions {
 namespace UserInterface {
     enum LayerType {
         NONE = 0,
-        Background,
-        World,
+        BACKGROUND,
+        WORLD_STATIC,
+        WORLD_DYNAMIC,
+        FOREGROUND,
         UI
     };
 }

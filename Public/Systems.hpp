@@ -122,6 +122,24 @@ inline bool Init_Systems(ecs::World& world) {
         FunctionsLib::LoadSprite(ctx.renderer, size, pos, sprite);
     },  ecs::World::Exclude<Template>{});
 
+
+    std::size_t num_renderables = world.count<Actor, Name, Size, Sprite, Visibility>(ecs::World::Exclude<Template>{});
+
+    std::vector<ecs::RenderableEntry> renderables;
+    renderables.reserve(num_renderables);
+
+    world.each<Actor, Name, Size, Sprite, Visibility>([&](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility)
+    {
+        ZOrder z_order;
+        if (world.has<ZOrder>(id)) {
+           z_order = world.get<ZOrder>(id);
+        }
+        renderables.push_back({id, z_order.layer, z_order.depth});
+    },  ecs::World::Exclude<Template>{});
+
+    world.add_resource(std::vector<ecs::RenderableEntry>{renderables});
+
+
     return true;
 }
 //------------------------------------------------------------------------------------------------------------------------
@@ -381,7 +399,17 @@ inline void Update_Bullets_Movement(ecs::World& world, float dt)
 
     }, ecs::World::Exclude<Template>{});
 
+    auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
+
     for (ecs::EntityID id : to_destroy) {
+        auto it = std::find_if(renderables.begin(), renderables.end(), [id](const ecs::RenderableEntry& entry) {
+            return entry.entity == id;
+        });
+
+        if (it != renderables.end()) {
+            renderables.erase(it);
+        }
+
         world.destroy(id);
     }
 }
@@ -542,6 +570,7 @@ inline void Render_Scene(ecs::World& world, float dt)
 {
     auto& ctx = world.get_resource<env::SDLContext>();
     auto& stats = world.get_resource<env::Stats>();
+    auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
 
     SDL_HideCursor();
 
@@ -552,45 +581,19 @@ inline void Render_Scene(ecs::World& world, float dt)
         std::cout << "\n-- Tick dt:" << dt << " -----------------------------------------------------------\n";
     }
 
-    world.each<Actor, Name, Position, Size, Sprite, Visibility>([&ctx](ecs::EntityID id, Actor &actor, Name& name, Position& pos, Size &size, Sprite &sprite, Visibility &visibility)
+    /*
+    world.each<Actor, Name, Size, Sprite, Visibility>([&ctx](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility)
     {
-        if (visibility.is_visible) {
-            if (SDL_Texture *sprite_texture = sprite.texture.get()) {
-
-                //  a pointer to a point indicating the point around which dstrect will be rotated (if NULL, rotation will be done around dstrect.w/2, dstrect.h/2).
-                SDL_FPoint* rotation_center = NULL;
-
-                // Draws the rotated texture on the GPU
-                if (SDL_RenderTextureRotated(ctx.renderer, sprite_texture, NULL, &sprite.scaled_rect, sprite.angle, rotation_center, SDL_FLIP_NONE)) {
-                //if (SDL_RenderTexture(ctx.renderer, SpriteTexture, nullptr, &sprite.scaled_rect)) {
-                    if (env::is_text_debug) {
-                        std::cout << "  ->Sprite rendered: " << name.name <<  " - pos: " << sprite.scaled_rect.x << "; " << sprite.scaled_rect.y <<
-                        " - size: "<< sprite.scaled_rect.w << "; " << sprite.scaled_rect.h << "\n";
-                    }
-
-                    if (sprite.draw_debug_shapes) {
-                        switch (sprite.collision_type) {
-                            case Collisions::RADIUS:
-                                FunctionsLib::DrawCircle(ctx.renderer, sprite.center, sprite.bounding_radius);
-                                break;
-                            case Collisions::RECTANGLE:
-                                FunctionsLib::DrawRectangle(ctx.renderer, sprite.scaled_rect);
-                                break;
-                            case Collisions::MULTI_CIRCLE:
-                                FunctionsLib::DrawCirclesCluster(ctx.renderer, sprite);
-                                break;
-                        }
-                    }
-                }
-                else {
-                    SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error rendering Texture: %s", SDL_GetError());
-                }
-            }
-            else {
-                SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error loading Texture: %s", sprite.filename.c_str());
-            }
-        }
+        FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
     },  ecs::World::Exclude<Template>{});
+*/
+
+    for (auto& r : renderables) {
+        auto& sprite = world.get<Sprite>(r.entity);
+        auto& name = world.get<Name>(r.entity);
+        auto& visibility = world.get<Visibility>(r.entity);
+        FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
+    }
 
     stats.UpdateStats(ctx.renderer, dt);
 

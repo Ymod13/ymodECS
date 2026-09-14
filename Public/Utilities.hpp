@@ -33,6 +33,8 @@ using namespace MathUtils;
 struct Sprite;
 struct Size;
 struct Position;
+struct Name;
+struct Visibility;
 
 namespace Utils {
 
@@ -56,9 +58,11 @@ namespace Utils {
         static bool LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite);
         static void SpawnBullet(ecs::World &world, const std::uint32_t owner_id, const env::BulletType bullet_type, const Vector2D &start_pos, const Vector2D &end_pos);
 
-        static void DrawCircle(SDL_Renderer* renderer, Vector2D &center, float radius, Uint8 r=255, Uint8 g=0, Uint8 b=0, Uint8 a=255);
+        static void DrawCircle(SDL_Renderer* renderer, const Vector2D &center, float radius, Uint8 r=255, Uint8 g=0, Uint8 b=0, Uint8 a=255);
         static void DrawRectangle(SDL_Renderer *renderer, const SDL_FRect &rect, Uint8 r=0, Uint8 g=255, Uint8 b=0, Uint8 a=255);
         static void DrawCirclesCluster(SDL_Renderer *renderer, const Sprite& obj, Uint8 r=0, Uint8 g=0, Uint8 b=255, Uint8 a=255);
+
+        static void DrawSprite(SDL_Renderer* renderer, const Sprite& sprite, const Name& name, const Visibility &visibility);
 
 
     };

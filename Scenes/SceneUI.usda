@@ -42,5 +42,11 @@ def "Scene" {
 			string collision_type = "NONE"
 			bool draw_debug_shapes = false
 		}
+		
+		def "ZOrder"
+		{
+			string layer = "UI"
+			float depth = 1000.0
+		}
 	 }
 }

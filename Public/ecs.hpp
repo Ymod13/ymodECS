@@ -237,7 +237,32 @@ public:
         }
     }
 
+    // Counts all the added entities
     std::size_t entity_count() const { return alive_.size(); }
+
+    // Counts entities with all listed components a no EXCLUDES
+    template<typename... Includes, typename... Excludes>
+    std::size_t count(Exclude<Excludes...> = {}) {
+        Signature required;
+        (required.set(ComponentRegistry::GetId<Includes>()), ...);
+
+        Signature excluded;
+        if constexpr (sizeof...(Excludes) > 0)
+            (excluded.set(ComponentRegistry::GetId<Excludes>()), ...);
+
+        std::size_t result = 0;
+        for (EntityID e : alive_) {
+            const Signature& sig = signatures_.at(e);
+
+            if ((sig & required) != required) continue;
+
+            if constexpr (sizeof...(Excludes) > 0)
+                if ((sig & excluded).any()) continue;
+
+            ++result;
+        }
+        return result;
+    }
 
 private:
     template<typename T>

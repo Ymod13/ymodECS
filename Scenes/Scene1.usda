@@ -49,6 +49,11 @@ def "Scene" {
 			bool can_push = true
 			bool draw_debug_shapes = true
 		}
+		
+		def "ZOrder"
+		{
+			string layer = "WORLD_DYNAMIC"
+		}
     }
 
     def "Enemy_1" {
@@ -93,6 +98,11 @@ def "Scene" {
 			string collision_type = "RADIUS"
 			bool can_push = false
 			bool draw_debug_shapes = true	
+		}
+		
+		def "ZOrder"
+		{
+			string layer = "WORLD_DYNAMIC"
 		}
         
     }
@@ -139,6 +149,11 @@ def "Scene" {
 			string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
 			bool draw_debug_shapes = true
+		}
+		
+		def "ZOrder"
+		{
+			string layer = "WORLD_DYNAMIC"
 		}
     }
 	

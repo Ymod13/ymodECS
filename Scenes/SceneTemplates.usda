@@ -63,5 +63,10 @@ def "Scene" {
 			bool overlaps_only = true;
 			bool draw_debug_shapes = true
 		}
+		
+		def "ZOrder"
+		{
+			string layer = "WORLD_DYNAMIC"
+		}
     }
 }

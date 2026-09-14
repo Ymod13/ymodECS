@@ -33,5 +33,10 @@ def "Scene" {
 		{
 			string filename = "Grass_1_seamless_512.jpg"
 		}
+		
+		def "ZOrder"
+		{
+			string layer = "BACKGROUND"
+		}
     }
 }
