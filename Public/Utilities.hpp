@@ -64,7 +64,31 @@ namespace Utils {
 
         static void DrawSprite(SDL_Renderer* renderer, const Sprite& sprite, const Name& name, const Visibility &visibility);
 
+        template<typename EnumType>
+        static std::string EnumToString(EnumType value) {
+            if constexpr (std::is_same_v<EnumType, env::BulletType>) {
+                if (value == env::PISTOL) return "PISTOL";
+                if (value == env::SHOTGUN) return "SHOTGUN";
+                if (value == env::ROCKET) return "SHOTGUN";
+                if (value == env::GRENADE) return "SHOTGUN";
+            }
+            else if constexpr (std::is_same_v<EnumType, Collisions::CollisionType>) {
+                if (value == Collisions::RADIUS) return "RADIUS";
+                if (value == Collisions::RECTANGLE) return "RECTANGLE";
+                if (value == Collisions::MULTI_CIRCLE) return "MULTI_CIRCLE";
+                if (value == Collisions::NONE) return "NONE";
+            }
+            else if constexpr (std::is_same_v<EnumType, UserInterface::LayerType>) {
+                if (value == UserInterface::NONE) return "NONE";
+                if (value == UserInterface::BACKGROUND) return "BACKGROUND";
+                if (value == UserInterface::WORLD_STATIC) return "WORLD_STATIC";
+                if (value == UserInterface::WORLD_DYNAMIC) return "WORLD_DYNAMIC";
+                if (value == UserInterface::FOREGROUND) return "FOREGROUND";
+                if (value == UserInterface::UI) return "UI";
+            }
 
+            return "NOT_RECOGNIZED";
+        }
     };
 }
 

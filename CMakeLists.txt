@@ -70,7 +70,8 @@ add_executable(ymodECS main.cpp
         Public/LuaUtils.hpp
         Private/LuaUtils.cpp
         Public/EventsListener.hpp
-        Private/EventsListener.cpp)
+        Private/EventsListener.cpp
+        Public/EcsInspector.hpp)
 
 target_include_directories(ymodECS SYSTEM PRIVATE
         ${PXR_INCLUDE_DIRS}

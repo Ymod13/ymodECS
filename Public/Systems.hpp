@@ -11,6 +11,7 @@
 
 #include "ComponetsDefinitions.hpp"
 #include "AccessSystem.hpp"
+#include "EcsInspector.hpp"
 #include "LuaUtils.hpp"
 #include "Scheduler.hpp"
 #include "UsdWrapper.hpp"
@@ -99,6 +100,8 @@ inline bool Init_Systems(ecs::World& world) {
     ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer3_Init(renderer);
 
+    EcsInspector ecsInspector;
+    world.add_resource(EcsInspector{ecsInspector});
 
     // World resources
     world.add_resource(env::SDLContext{window, renderer});
@@ -607,6 +610,7 @@ inline void Render_Scene(ecs::World& world, float dt)
     auto& ctx = world.get_resource<env::SDLContext>();
     auto& stats = world.get_resource<env::Stats>();
     auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
+    auto &ecsInspector = world.get_resource<EcsInspector>();
 
     // --- ImGui: frame start UI building ---
     ImGui_ImplSDLRenderer3_NewFrame();
@@ -615,7 +619,7 @@ inline void Render_Scene(ecs::World& world, float dt)
 
     // custom UI here (ex. ecsInspector.Draw(world))
     if (env::show_imgui) {
-        ImGui::ShowDemoWindow();
+        ecsInspector.Draw(world);
     }
 
     auto& cursorVis = world.get<Visibility>(UserInterface::MouseCursorId);

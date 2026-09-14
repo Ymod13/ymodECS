@@ -23,7 +23,9 @@
 namespace ecs {
 
 // ─── Configuration ──────────────────────────────────────────
-static constexpr std::size_t MAX_COMPONENTS = 64;
+    static constexpr std::size_t MAX_COMPONENTS = 64;
+    static constexpr std::uint32_t INVALID_ENTITY = std::numeric_limits<std::uint32_t>::max();
+
 
 // ─── Types ───────────────────────────────────────────────────
 using EntityID    = std::uint32_t;
