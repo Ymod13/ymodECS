@@ -399,17 +399,7 @@ inline void Update_Bullets_Movement(ecs::World& world, float dt)
 
     }, ecs::World::Exclude<Template>{});
 
-    auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
-
     for (ecs::EntityID id : to_destroy) {
-        auto it = std::find_if(renderables.begin(), renderables.end(), [id](const ecs::RenderableEntry& entry) {
-            return entry.entity == id;
-        });
-
-        if (it != renderables.end()) {
-            renderables.erase(it);
-        }
-
         world.destroy(id);
     }
 }

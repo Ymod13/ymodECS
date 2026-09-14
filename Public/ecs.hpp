@@ -45,8 +45,13 @@ using ComponentID = std::uint8_t;
        */
 using Signature   = std::bitset<MAX_COMPONENTS>;
 
-
 static constexpr EntityID NULL_ENTITY = 0;
+
+struct RenderableEntry {
+    EntityID entity;
+    int layer;
+    float depth;
+};
 
 // ─── Component registry ──────────────────────────────────────
 // Assigns a unique integer ID to each component type at runtime.
@@ -147,6 +152,19 @@ public:
     }
 
     void destroy(EntityID e) {
+
+        if (has_resource<std::vector<RenderableEntry>>()) {
+            auto& renderables = get_resource<std::vector<RenderableEntry>>();
+
+            auto it = std::find_if(renderables.begin(), renderables.end(), [e](const RenderableEntry& entry) {
+               return entry.entity == e;
+            });
+
+            if (it != renderables.end()) {
+                renderables.erase(it);
+            }
+        }
+
         for (auto& [tid, eraser] : erasers_) {
             eraser(e);  // remove all components
         }

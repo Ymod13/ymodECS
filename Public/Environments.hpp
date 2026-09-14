@@ -15,12 +15,6 @@
 using namespace MathUtils;
 namespace ecs {
     using EntityID    = std::uint32_t;
-
-    struct RenderableEntry {
-        EntityID entity;
-        int layer;
-        float depth;
-    };
 }
 
 namespace env
