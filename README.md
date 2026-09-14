@@ -6,6 +6,7 @@ Here is a recap of all the features:
 - SDL 2D graphics
 - LUA support
 - USD support
+- ImGUI support
 - Collisions
 - Multithreading
 - Access system (first pass stage, not completely integrated in the engine)
