@@ -621,7 +621,7 @@ inline void Render_Scene(ecs::World& world, float dt)
     auto& cursorVis = world.get<Visibility>(UserInterface::MouseCursorId);
     cursorVis.is_visible = !env::show_imgui;
 
-    static bool was_showing_cursor = false;
+    static bool was_showing_cursor = true;
     if (env::show_imgui != was_showing_cursor) {
         if (env::show_imgui) {
             SDL_ShowCursor();

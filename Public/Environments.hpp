@@ -35,7 +35,7 @@ namespace env
     inline bool display_lua_debug_messages = false;
     inline bool display_stats = true;
     inline float stats_display_interval = 0.5f;
-    inline bool show_imgui = true;
+    inline bool show_imgui = false;
 
     inline Vector2D player_pos;
     inline ecs::EntityID player_id;
