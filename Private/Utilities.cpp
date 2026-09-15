@@ -541,10 +541,19 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
 
         world.add(e, std::move(bullet_velocity));
 
-        auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
-        renderables.push_back({e, bullet_z_order.layer, bullet_z_order.depth});
+        if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
+            auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
 
-        // TODO: reorder renderables
+            auto [it, inserted] = renderables_by_layer.try_emplace(bullet_z_order.layer);
+            it->second.push_back({e, bullet_z_order.layer, bullet_z_order.depth});
+
+            // TODO: reorder renderables
+        }
+        else {
+            std::cerr << "Layer resource not found, cannot render Bullet" << std::endl;
+        }
+
+
     }
     else {
         std::cerr << "Error loading bullet sprite" << std::endl;

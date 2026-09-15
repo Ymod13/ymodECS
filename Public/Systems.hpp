@@ -145,8 +145,7 @@ inline bool Init_Systems(ecs::World& world) {
 
     std::size_t num_renderables = world.count<Actor, Name, Size, Sprite, Visibility>(ecs::World::Exclude<Template>{});
 
-    std::vector<ecs::RenderableEntry> renderables;
-    renderables.reserve(num_renderables);
+    std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>> renderables_by_layer;
 
     world.each<Actor, Name, Size, Sprite, Visibility>([&](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility)
     {
@@ -154,10 +153,16 @@ inline bool Init_Systems(ecs::World& world) {
         if (world.has<ZOrder>(id)) {
            z_order = world.get<ZOrder>(id);
         }
-        renderables.push_back({id, z_order.layer, z_order.depth});
+        renderables_by_layer[z_order.layer].push_back({id, z_order.layer, z_order.depth});
+
     },  ecs::World::Exclude<Template>{});
 
-    world.add_resource(std::vector<ecs::RenderableEntry>{renderables});
+    // renderables map first ordering
+    for (auto& [layer, entries] : renderables_by_layer) {
+        std::ranges::sort(entries, {}, &ecs::RenderableEntry::depth);
+    }
+
+    world.add_resource(std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>{renderables_by_layer});
 
 
     return true;
@@ -609,7 +614,6 @@ inline void Render_Scene(ecs::World& world, float dt)
 {
     auto& ctx = world.get_resource<env::SDLContext>();
     auto& stats = world.get_resource<env::Stats>();
-    auto& renderables = world.get_resource<std::vector<ecs::RenderableEntry>>();
     auto &ecsInspector = world.get_resource<EcsInspector>();
 
     // --- ImGui: frame start UI building ---
@@ -639,11 +643,22 @@ inline void Render_Scene(ecs::World& world, float dt)
     SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
     SDL_RenderClear(ctx.renderer);
 
-    for (auto& r : renderables) {
-        auto& sprite = world.get<Sprite>(r.entity);
-        auto& name = world.get<Name>(r.entity);
-        auto& visibility = world.get<Visibility>(r.entity);
-        FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
+    if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
+        auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
+
+        for (auto& [layer, renderable_entries] : renderables_by_layer) {
+            for (auto& r : renderable_entries) {
+                auto& sprite = world.get<Sprite>(r.entity);
+                auto& name = world.get<Name>(r.entity);
+                auto& visibility = world.get<Visibility>(r.entity);
+                FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
+            }
+        }
+    }
+    else
+    {
+        std::cerr << "Layer resource found, cannot render sprites" << std::endl;
+        return;
     }
 
     stats.UpdateStats(ctx.renderer, dt);

@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Environments.hpp"
+
 namespace ecs {
 
 // ─── Configuration ──────────────────────────────────────────
@@ -155,15 +157,17 @@ public:
 
     void destroy(EntityID e) {
 
-        if (has_resource<std::vector<RenderableEntry>>()) {
-            auto& renderables = get_resource<std::vector<RenderableEntry>>();
+        if (has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
+            auto& renderables_by_layer = get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
 
-            auto it = std::find_if(renderables.begin(), renderables.end(), [e](const RenderableEntry& entry) {
-               return entry.entity == e;
-            });
+            for (auto& [layer, renderable_entries] : renderables_by_layer) {
+                auto it = std::find_if(renderable_entries.begin(), renderable_entries.end(), [e](const RenderableEntry& entry) {
+                   return entry.entity == e;
+                });
 
-            if (it != renderables.end()) {
-                renderables.erase(it);
+                if (it != renderable_entries.end()) {
+                    renderable_entries.erase(it);
+                }
             }
         }
 

@@ -141,13 +141,13 @@ namespace UserInterface {
 
     inline ecs::EntityID MouseCursorId=ecs::EntityID();
 
-    enum LayerType {
+    enum LayerType : uint16_t {
         NONE = 0,
-        BACKGROUND,
-        WORLD_STATIC,
-        WORLD_DYNAMIC,
-        FOREGROUND,
-        UI
+        BACKGROUND = 100,
+        WORLD_STATIC = 200,
+        WORLD_DYNAMIC = 300,
+        FOREGROUND = 400,
+        UI = 500
     };
 }
 
