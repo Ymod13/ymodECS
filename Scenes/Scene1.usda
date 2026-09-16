@@ -48,6 +48,7 @@ def "Scene" {
 			string collision_type = "MULTI_CIRCLE"
 			bool can_push = true
 			bool draw_debug_shapes = true
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"
@@ -98,6 +99,7 @@ def "Scene" {
 			string collision_type = "RADIUS"
 			bool can_push = false
 			bool draw_debug_shapes = true	
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"
@@ -149,6 +151,7 @@ def "Scene" {
 			#string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
 			bool draw_debug_shapes = true
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"

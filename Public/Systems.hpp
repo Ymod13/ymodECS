@@ -648,22 +648,28 @@ inline void Render_Scene(ecs::World& world, float dt)
 
         for (auto& [layer, renderable_entries] : renderables_by_layer) {
             if (layer==UserInterface::LayerType::WORLD_DYNAMIC) {
+                bool any_changed = false;
                 // Dynamic depth ordering
                 for (auto& r : renderable_entries) {
                     auto& visibility = world.get<Visibility>(r.entity);
 
                     if (visibility.is_visible) {
                         auto& pos = world.get<Position>(r.entity);
+                        auto& sprite = world.get<Sprite>(r.entity);
                         auto& z_order = world.get<ZOrder>(r.entity);
-                        z_order.depth = pos.pos.y;
+
+                        float new_depth = FunctionsLib::ComputeDepth(pos, sprite);
+                        if (new_depth != z_order.depth) {
+                            z_order.depth = new_depth;
+                            r.depth = z_order.depth;
+                            any_changed = true;
+                        }
                     }
                 }
 
-                // questo non va.
-                //  qui stiamo modificando solo i dati relativi alle renderables entities, non i dati degli effettivi componenti.
-                // renderables sono una copia... cercare di evitare, magariu salviamo solo la entoty ID in rederables...
-
-                std::ranges::sort(renderable_entries, {}, &ecs::RenderableEntry::depth);
+                if (any_changed) {
+                    FunctionsLib::InsertionSortByDepth(renderable_entries);
+                }
             }
 
             for (auto& r : renderable_entries) {

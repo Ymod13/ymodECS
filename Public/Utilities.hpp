@@ -22,6 +22,7 @@ PXR_NAMESPACE_USING_DIRECTIVE
 namespace ecs {
     class World;
     using EntityID    = std::uint32_t;
+    struct RenderableEntry;
 }
 
 namespace MathUtils {
@@ -54,6 +55,8 @@ namespace Utils {
         static float CalculateRectRadius(const SDL_FRect& rect);
         static void GenerateCircleCluster(Sprite& obj, int cellSize = Collisions::cell_size, Uint8 alphaThreshold = Collisions::alpha_threshold);
         static std::vector<Collisions::WorldCircle> GetWorldColliders(const Sprite& obj);
+        static float ComputeDepth(const Position& position, const Sprite& sprite);
+        static void InsertionSortByDepth(std::vector<ecs::RenderableEntry>& entries);
 
         static bool LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite);
         static void SpawnBullet(ecs::World &world, const std::uint32_t owner_id, const env::BulletType bullet_type, const Vector2D &start_pos, const Vector2D &end_pos);

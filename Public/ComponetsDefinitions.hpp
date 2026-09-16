@@ -74,6 +74,7 @@ struct Sprite {
     SDL_FRect rect;
     SDL_FRect scaled_rect;
     Vector2D center;
+    float pivot_y = 0.0f; // 0.0 = top, 0.5 = center, 1.0 = bottom/feet
     float angle=0.0f;
 
     // Collisions

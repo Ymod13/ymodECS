@@ -76,7 +76,8 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
             FieldPack<Sprite, bool, bool>{"can_push", &Sprite::can_push},
             FieldPack<Sprite, bool, bool>{"is_static_obstacle", &Sprite::is_static_obstacle},
             FieldPack<Sprite, bool, bool>{"overlaps_only", &Sprite::overlaps_only},
-            FieldPack<Sprite, bool, bool>{"draw_debug_shapes", &Sprite::draw_debug_shapes});
+            FieldPack<Sprite, bool, bool>{"draw_debug_shapes", &Sprite::draw_debug_shapes},
+            FieldPack<Sprite, float, float>{"pivot_y", &Sprite::pivot_y});
 
             UsdWrapper::LoadComponentPrim<Bullet>(world, e, prim, "Bullet",
             FieldPack<Bullet, std::string, env::BulletType>{"bullet_type", &Bullet::bullet_type},

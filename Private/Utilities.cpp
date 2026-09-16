@@ -423,6 +423,26 @@ std::vector<Collisions::WorldCircle> FunctionsLib::GetWorldColliders(const Sprit
 }
 // -------------------------------------------------------------------------------------------------------------
 
+float FunctionsLib::ComputeDepth(const Position &position, const Sprite &sprite) {
+    float offset = sprite.scaled_rect.h * sprite.pivot_y;
+    return position.pos.y + offset;
+}
+// -------------------------------------------------------------------------------------------------------------
+
+void FunctionsLib::InsertionSortByDepth(std::vector<ecs::RenderableEntry> &entries) {
+    for (size_t i = 1; i < entries.size(); ++i) {
+        auto key = entries[i];
+        size_t j = i;
+
+        while (j > 0 && entries[j - 1].depth > key.depth) {
+            entries[j] = entries[j - 1];
+            --j;
+        }
+        entries[j] = key;
+    }
+}
+// -------------------------------------------------------------------------------------------------------------
+
 bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite) {
     const std::string filename = env::sprites_folder + out_sprite.filename;
 
