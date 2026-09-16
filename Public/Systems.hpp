@@ -142,18 +142,18 @@ inline bool Init_Systems(ecs::World& world) {
         FunctionsLib::LoadSprite(ctx.renderer, size, pos, sprite);
     },  ecs::World::Exclude<Template>{});
 
-
-    std::size_t num_renderables = world.count<Actor, Name, Size, Sprite, Visibility>(ecs::World::Exclude<Template>{});
-
     std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>> renderables_by_layer;
 
-    world.each<Actor, Name, Size, Sprite, Visibility>([&](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility)
+    world.each<Actor, Name, Size, Sprite, Visibility, Position>([&](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility, const Position &pos)
     {
-        ZOrder z_order;
         if (world.has<ZOrder>(id)) {
-           z_order = world.get<ZOrder>(id);
+            auto &z_order = world.get<ZOrder>(id);
+            if (z_order.layer == UserInterface::LayerType::WORLD_DYNAMIC) {
+                z_order.depth = pos.pos.y;
+                std::cout << " updated Depth: " << z_order.depth << std::endl;
+            }
+            renderables_by_layer[z_order.layer].push_back({id, z_order.layer, z_order.depth});
         }
-        renderables_by_layer[z_order.layer].push_back({id, z_order.layer, z_order.depth});
 
     },  ecs::World::Exclude<Template>{});
 
@@ -647,6 +647,25 @@ inline void Render_Scene(ecs::World& world, float dt)
         auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
 
         for (auto& [layer, renderable_entries] : renderables_by_layer) {
+            if (layer==UserInterface::LayerType::WORLD_DYNAMIC) {
+                // Dynamic depth ordering
+                for (auto& r : renderable_entries) {
+                    auto& visibility = world.get<Visibility>(r.entity);
+
+                    if (visibility.is_visible) {
+                        auto& pos = world.get<Position>(r.entity);
+                        auto& z_order = world.get<ZOrder>(r.entity);
+                        z_order.depth = pos.pos.y;
+                    }
+                }
+
+                // questo non va.
+                //  qui stiamo modificando solo i dati relativi alle renderables entities, non i dati degli effettivi componenti.
+                // renderables sono una copia... cercare di evitare, magariu salviamo solo la entoty ID in rederables...
+
+                std::ranges::sort(renderable_entries, {}, &ecs::RenderableEntry::depth);
+            }
+
             for (auto& r : renderable_entries) {
                 auto& sprite = world.get<Sprite>(r.entity);
                 auto& name = world.get<Name>(r.entity);

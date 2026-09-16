@@ -1,30 +1,35 @@
+//
+// Created by ymod1 on 12/05/2026.
+//
 
 #include <SDL3/SDL.h>
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 #include <pxr/base/plug/registry.h>
 #include <pxr/base/plug/plugin.h>
-#include <pxr/base/tf/debug.h>
-#include <filesystem>
 
 #include "Systems.hpp"
 
+std::filesystem::path GetExecutableDir()
+{
+    wchar_t buffer[MAX_PATH];
+    GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+    return std::filesystem::path(buffer).parent_path();
+}
+//------------------------------------------------------------------------------------------------
+
 void InitUsdSubsystem()
 {
-#if defined(_DEBUG)
-    std::cout << "[C++] Registering USD plugins (Debug)..." << std::endl;
+    std::filesystem::path exeDir = GetExecutableDir();
+
+    std::cout << "[C++] Registering USD plugins..." << std::endl;
+
     const std::vector<std::string> pluginPaths = {
-        "D:/Stuff/Projects/USD_Debug/plugin/usd",
-        "D:/Stuff/Projects/USD_Debug/lib/usd"
+        (exeDir / "usd").string(),
+        (exeDir / "usd_lib").string()
     };
-#else
-    std::cout << "[C++] Registering USD plugins (Release)..." << std::endl;
-    const std::vector<std::string> pluginPaths = {
-        "D:/Stuff/Projects/USD_Release/plugin/usd",
-        "D:/Stuff/Projects/USD_Release/lib/usd"
-    };
-#endif
 
     auto& registry = PlugRegistry::GetInstance();
     auto newPlugins = registry.RegisterPlugins(pluginPaths);
@@ -34,6 +39,7 @@ void InitUsdSubsystem()
         std::cout << "  - " << plug->GetName() << std::endl;
     }
 }
+//------------------------------------------------------------------------------------------------
 
 int main()
 {

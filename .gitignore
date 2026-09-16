@@ -1,16 +1,26 @@
-# Default ignored files
+# Build directories (CMake / Visual Studio / CLion)
 cmake-build-*/
 build/
 out/
 .vs/
+CMakeFiles/
+CMakeCache.txt
+
+# Build artifacts
 *.obj
 *.exe
 *.pdb
 *.ilk
-.idea/
-CMakeFiles/
-CMakeCache.txt
 
-# dist/ dir must be published
-!dist/
-!dist/**
+# IDE
+.idea/
+
+# Heavy Dependencies pesanti — distributed separately
+Dependencies/USD/Debug/
+
+# vcpkg manifest mode
+vcpkg_installed/
+
+# Local config
+CMakeUserPresets.json
+*.user

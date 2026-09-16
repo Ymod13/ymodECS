@@ -533,6 +533,7 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
         world.add(e, std::move(new_bullet));
         world.add(e, std::move(bullet_sprite));
         world.add(e, std::move(bullet_size));
+        world.add(e, std::move(bullet_z_order));
 
         Vector2D bullet_dir = end_pos - start_pos;
         bullet_dir.normalize();
@@ -545,9 +546,14 @@ void FunctionsLib::SpawnBullet(ecs::World &world, const ecs::EntityID owner_id, 
             auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
 
             auto [it, inserted] = renderables_by_layer.try_emplace(bullet_z_order.layer);
-            it->second.push_back({e, bullet_z_order.layer, bullet_z_order.depth});
 
-            // TODO: reorder renderables
+            renderables_by_layer[bullet_z_order.layer].push_back({e, bullet_z_order.layer, bullet_z_order.depth});
+            std::ranges::sort(renderables_by_layer[bullet_z_order.layer], {}, &ecs::RenderableEntry::depth);
+
+            // TODO: questo crea un crash
+            //it->second.push_back({e, bullet_z_order.layer, bullet_z_order.depth});
+
+            //std::ranges::sort(it->second, {}, &ecs::RenderableEntry::depth);
         }
         else {
             std::cerr << "Layer resource not found, cannot render Bullet" << std::endl;

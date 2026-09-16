@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.30)
 
 set(CMAKE_TOOLCHAIN_FILE "D:/Stuff/Projects/vcpkg/vcpkg-master/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 
-# Disattiva la copia automatica delle DLL vcpkg accanto all'exe: la gestiamo noi manualmente in bin/
+# Automatically deactivate vcpkg's DLL copy in exe's folder: we do it manually in bin/
 set(VCPKG_APPLOCAL_DEPS OFF CACHE BOOL "" FORCE)
 
 project(ymodECS CXX)
@@ -15,17 +15,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(VCPKG_TARGET_TRIPLET "x64-windows") # Vcpkg capirà da solo di pescare da /debug/lib
-    set(USD_ROOT "D:/Stuff/Projects/USD_Debug")
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
+    set(USD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/USD/Debug")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/debug/bin")
     set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Debug/lua54d.lib")
-
 else()
-
-    set(USD_ROOT "D:/Stuff/Projects/USD_Release")
+    set(USD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/USD/Release")
     set(VCPKG_BIN_DIR "D:/Stuff/Projects/vcpkg/vcpkg-master/installed/x64-windows/bin")
     set(LUA_LIB "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/lib/Release/lua54.lib")
-
 endif()
 
 set(pxr_DIR "${USD_ROOT}")
@@ -35,7 +32,7 @@ find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
 find_package(pxr REQUIRED)
 
-# --- Dear ImGui (sorgenti diretti, no vcpkg) ---
+# --- Dear ImGui ---
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/imgui")
 
 add_library(imgui STATIC
@@ -134,6 +131,10 @@ if(WIN32)
             COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${USD_ROOT}/plugin/usd"
             "${RUNTIME_DIR}/usd"
+
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${USD_ROOT}/lib/usd"
+            "${RUNTIME_DIR}/usd_lib"
 
             # Asset
             COMMAND ${CMAKE_COMMAND} -E copy_directory
