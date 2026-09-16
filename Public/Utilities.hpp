@@ -57,6 +57,7 @@ namespace Utils {
         static std::vector<Collisions::WorldCircle> GetWorldColliders(const Sprite& obj);
         static float ComputeDepth(const Position& position, const Sprite& sprite);
         static void InsertionSortByDepth(std::vector<ecs::RenderableEntry>& entries);
+        static void DynamicZOrdering(ecs::World &world, std::vector<ecs::RenderableEntry>& entries, const bool &is_first_ordering);
 
         static bool LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite);
         static void SpawnBullet(ecs::World &world, const std::uint32_t owner_id, const env::BulletType bullet_type, const Vector2D &start_pos, const Vector2D &end_pos);

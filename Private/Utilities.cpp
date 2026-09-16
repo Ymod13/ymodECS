@@ -443,6 +443,39 @@ void FunctionsLib::InsertionSortByDepth(std::vector<ecs::RenderableEntry> &entri
 }
 // -------------------------------------------------------------------------------------------------------------
 
+void FunctionsLib::DynamicZOrdering(ecs::World &world, std::vector<ecs::RenderableEntry> &entries, const bool &is_first_ordering) {
+    bool any_changed = false;
+    // Dynamic depth ordering
+    for (auto& r : entries) {
+        auto& visibility = world.get<Visibility>(r.entity);
+
+        if (visibility.is_visible) {
+            auto& pos = world.get<Position>(r.entity);
+            auto& sprite = world.get<Sprite>(r.entity);
+            auto& z_order = world.get<ZOrder>(r.entity);
+
+            float new_depth = FunctionsLib::ComputeDepth(pos, sprite);
+            if (new_depth != z_order.depth) {
+                z_order.depth = new_depth;
+                r.depth = z_order.depth;
+                any_changed = true;
+            }
+        }
+    }
+
+    if (is_first_ordering) {
+        // O(n log n)
+        std::ranges::sort(entries, {}, &ecs::RenderableEntry::depth);
+    }
+    else {
+        // O(n) -> O(n*n) (worst case)
+        if (any_changed) {
+            FunctionsLib::InsertionSortByDepth(entries);
+        }
+    }
+}
+// -------------------------------------------------------------------------------------------------------------
+
 bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite) {
     const std::string filename = env::sprites_folder + out_sprite.filename;
 

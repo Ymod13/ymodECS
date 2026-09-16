@@ -159,7 +159,7 @@ inline bool Init_Systems(ecs::World& world) {
 
     // renderables map first ordering
     for (auto& [layer, entries] : renderables_by_layer) {
-        std::ranges::sort(entries, {}, &ecs::RenderableEntry::depth);
+        FunctionsLib::DynamicZOrdering(world, entries, true);
     }
 
     world.add_resource(std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>{renderables_by_layer});
@@ -648,28 +648,7 @@ inline void Render_Scene(ecs::World& world, float dt)
 
         for (auto& [layer, renderable_entries] : renderables_by_layer) {
             if (layer==UserInterface::LayerType::WORLD_DYNAMIC) {
-                bool any_changed = false;
-                // Dynamic depth ordering
-                for (auto& r : renderable_entries) {
-                    auto& visibility = world.get<Visibility>(r.entity);
-
-                    if (visibility.is_visible) {
-                        auto& pos = world.get<Position>(r.entity);
-                        auto& sprite = world.get<Sprite>(r.entity);
-                        auto& z_order = world.get<ZOrder>(r.entity);
-
-                        float new_depth = FunctionsLib::ComputeDepth(pos, sprite);
-                        if (new_depth != z_order.depth) {
-                            z_order.depth = new_depth;
-                            r.depth = z_order.depth;
-                            any_changed = true;
-                        }
-                    }
-                }
-
-                if (any_changed) {
-                    FunctionsLib::InsertionSortByDepth(renderable_entries);
-                }
+                FunctionsLib::DynamicZOrdering(world, renderable_entries, false);
             }
 
             for (auto& r : renderable_entries) {
