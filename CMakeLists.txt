@@ -30,7 +30,16 @@ set(pxr_DIR "${USD_ROOT}")
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+find_package(freetype CONFIG REQUIRED)
 find_package(pxr REQUIRED)
+
+# --- RmlUi ---
+set(RMLUI_SAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(RMLUI_FONT_ENGINE "freetype" CACHE STRING "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)  # forces static rebuild, no Dll to handle
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/RmlUi")
 
 # --- Dear ImGui ---
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/imgui")
@@ -68,7 +77,10 @@ add_executable(ymodECS main.cpp
         Private/LuaUtils.cpp
         Public/EventsListener.hpp
         Private/EventsListener.cpp
-        Public/EcsInspector.hpp)
+        Public/EcsInspector.hpp
+        Public/RmlSystemInterface.hpp
+        Public/RmlRenderInterface.hpp
+        Public/RmlInputBridge.hpp)
 
 target_include_directories(ymodECS SYSTEM PRIVATE
         ${PXR_INCLUDE_DIRS}
@@ -79,6 +91,7 @@ target_include_directories(ymodECS PRIVATE
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
         "D:/Stuff/Projects/sol2-develop/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/RmlUi/Include"
 )
 
 target_compile_definitions(ymodECS PRIVATE
@@ -87,6 +100,7 @@ target_compile_definitions(ymodECS PRIVATE
         __TBB_NO_IMPLICIT_LINKAGE=1
         __TBBMALLOC_NO_IMPLICIT_LINKAGE=1
         TBB_SUPPRESS_DEPRECATED_MESSAGES=1
+        $<$<CONFIG:Debug>:YMODECS_RMLUI_DEBUGGER=1>
 )
 
 target_link_libraries(ymodECS PRIVATE
@@ -102,6 +116,8 @@ target_link_libraries(ymodECS PRIVATE
         ${USD_ROOT}/lib/usd_plug.lib
         ${LUA_LIB}
         imgui
+        rmlui_core
+        $<$<CONFIG:Debug>:rmlui_debugger>   # <-- links RmlDebugger only in Debug
 )
 
 if(WIN32)
@@ -152,6 +168,7 @@ if(WIN32)
             COMMAND ${CMAKE_COMMAND} -E make_directory ${DIST_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ymodECS> ${DIST_DIR}/
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${BIN_DIR} ${DIST_DIR}/bin
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/usd_lib ${DIST_DIR}/usd_lib
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/usd ${DIST_DIR}/usd
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Resources ${DIST_DIR}/Resources
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${RUNTIME_DIR}/Scenes ${DIST_DIR}/Scenes

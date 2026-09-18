@@ -53,7 +53,8 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
               FieldPack<Name, std::string, std::string>{"name", &Name::name});
 
             UsdWrapper::LoadComponentPrim<Position>(world, e, prim, "Position",
-               FieldPack<Position, GfVec2f, Vector2D>{"pos", &Position::pos});
+               FieldPack<Position, GfVec2f, Vector2D>{"pos", &Position::pos},
+               FieldPack<Position, GfVec2f, Vector2D>{"map_pos", &Position::map_pos});
 
             UsdWrapper::LoadComponentPrim<Size>(world, e, prim, "Size",
                FieldPack<Size, GfVec2f, Vector2D>{"scale", &Size::scale});

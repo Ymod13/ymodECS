@@ -16,7 +16,7 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (800.0, 600.0)
+			 float2 pos = (1000.0, 1000.0)
 		}
 		
 		def "Size"
@@ -67,7 +67,7 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (400.0, 200.0)
+			 float2 pos = (400.0, 2000.0)
 		}
 		
 		def "Size"
@@ -82,7 +82,7 @@ def "Scene" {
 
 		def "Velocity"
 		{
-			float2 vel = (0.0, 10.0)
+			float2 vel = (0.0, -10.0)
 			float2 max_vel = (0.0, 10.0)
 			float2 acceleration = (0.0, 0.0)
 		}

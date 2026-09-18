@@ -18,6 +18,13 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "RmlInputBridge.hpp"
+#include "RmlUi/Core/Core.h"
+#include "RmlUi/Core/ElementDocument.h"
+
+#ifdef YMODECS_RMLUI_DEBUGGER
+#include "RmlUi/Debugger/Debugger.h"
+#endif
 
 
 // Systems declarations
@@ -100,11 +107,44 @@ inline bool Init_Systems(ecs::World& world) {
     ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
     ImGui_ImplSDLRenderer3_Init(renderer);
 
+    // RmlUi init
+    //-----------
+    auto* rmlRenderInterface = new RmlRenderInterface(renderer);
+    auto* rmlSystemInterface = new RmlSystemInterface();
+
+    Rml::SetRenderInterface(rmlRenderInterface);
+    Rml::SetSystemInterface(rmlSystemInterface);
+
+    if (!Rml::Initialise())
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems: RmlUi initialisation failed");
+        return false;
+    }
+
+    Rml::LoadFontFace("Resources/Fonts/Roboto-Regular.ttf", true);
+    Rml::LoadFontFace("Resources/Fonts/Roboto-Italic.ttf");
+    Rml::LoadFontFace("Resources/Fonts/Roboto-Bold.ttf");
+
+    Rml::Context* rmlContext = Rml::CreateContext("main", Rml::Vector2i(env::screen_width, env::screen_height));
+    if (!rmlContext)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems: Failed to create RmlUi context");
+        return false;
+    }
+
+#ifdef YMODECS_RMLUI_DEBUGGER
+    Rml::Debugger::Initialise(rmlContext);
+#endif
+
+
+    // ECS Inspector
+    //----------------
     EcsInspector ecsInspector;
     world.add_resource(EcsInspector{ecsInspector});
 
     // World resources
     world.add_resource(env::SDLContext{window, renderer});
+    world.add_resource(env::RmlUIContext{rmlContext, rmlRenderInterface, rmlSystemInterface});
     world.add_resource(env::InputState{});
     world.add_resource(env::Stats{});
 
@@ -136,6 +176,15 @@ inline bool Init_Systems(ecs::World& world) {
     UsdWrapper::LoadUsdFile("Scenes/SceneBackgrounds.usda", world);
     UsdWrapper::LoadUsdFile("Scenes/Scene1.usda", world);
     UsdWrapper::LoadUsdFile("Scenes/SceneUI.usda", world);
+
+    // Load RmlUi UI Assets
+    //----------------------
+    Rml::ElementDocument* testDocument = rmlContext->LoadDocument("Resources/UI/test.rml");
+    if (testDocument) {
+        testDocument->Show();
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to load test.rml");
+    }
 
     world.each<Sprite, Size, Position>([&](ecs::EntityID, Sprite& sprite, Size& size, Position &pos)
     {
@@ -186,6 +235,13 @@ inline bool Quit_Systems(ecs::World& world) {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
+    // RmlUi shutdown
+    //-----------------
+    auto& rmlCtx = world.get_resource<env::RmlUIContext>();
+    Rml::Shutdown();
+    delete rmlCtx.renderInterface;
+    delete rmlCtx.systemInterface;
+
     auto& ctx = world.get_resource<env::SDLContext>();
     SDL_DestroyRenderer(ctx.renderer);
     SDL_DestroyWindow(ctx.window);
@@ -203,6 +259,8 @@ inline void Handle_Input(ecs::World& world, float dt) {
 
     auto& input = world.get_resource<env::InputState>();
     auto& stats = world.get_resource<env::Stats>();
+    auto& rmlCtx = world.get_resource<env::RmlUIContext>();
+
     Vector2D mouse_pos;
     Vector2D mouse_rel;
     bool is_mouse_moved = false;
@@ -212,6 +270,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
 
         ImGui_ImplSDL3_ProcessEvent(&input.event);
 
+        RmlInputBridge::ProcessEvent(rmlCtx, &input.event);
 
         switch (input.event.type) {
             case SDL_EVENT_QUIT:
@@ -387,7 +446,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
 
     world.each<UI, GameCursor, Position, Sprite, Size>([&, dt](ecs::EntityID e, UI& ui, GameCursor &game_cursor, Position& pos, Sprite &sprite, Size &size) {
        if (is_mouse_moved) {
-           FunctionsLib::UpdatePosition(mouse_pos, pos, sprite, size.scale, true);
+           FunctionsLib::UpdatePosition(mouse_pos, pos, sprite, size.scale);
            stats.mouse_screen_pos = mouse_pos;;
            UserInterface::MouseCursorId = e;
        }
@@ -427,7 +486,7 @@ inline void Update_Enemies_Movement(ecs::World& world, float dt)
     world.each<Enemy, Position, Velocity, Sprite, Size, Visibility>([dt](ecs::EntityID, Enemy& en, Position& pos, Velocity& vel,Sprite &sprite, Size &size, Visibility &visibility)
     {
         if (visibility.is_visible) {
-            FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
+            FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale);
         }
 
     },  ecs::World::Exclude<Template>{});
@@ -447,7 +506,7 @@ inline void Update_Bullets_Movement(ecs::World& world, float dt)
                 to_destroy.push_back(id);
             }
             else {
-                FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
+                FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale);
             }
         }
 
@@ -577,24 +636,24 @@ inline void Collision_detection(ecs::World& world, float dt) {
 
                         } else {
                             //  Collisions influenced movement
-
+                            // TODO: if PLAYER, update map position too
                             if (sprite.is_static_obstacle) {
-                                FunctionsLib::UpdatePosition(pos_2.pos - push_vector , pos_2, sprite_2, size.scale, true);
+                                FunctionsLib::UpdatePosition(pos_2.pos - push_vector , pos_2, sprite_2, size.scale);
                             }  else {
                                 if (sprite_2.is_static_obstacle) {
-                                    FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale, true);
+                                    FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale);
                                 }
                                 else {
                                     if (sprite.can_push && !sprite_2.can_push) {
                                         // move sprite_2 only
-                                        FunctionsLib::UpdatePosition(pos_2.pos - push_vector , pos_2, sprite_2, size.scale, true);
+                                        FunctionsLib::UpdatePosition(pos_2.pos - push_vector , pos_2, sprite_2, size.scale);
                                     }
                                     else if (!sprite.can_push && sprite_2.can_push) {
-                                        FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale, true);
+                                        FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale);
                                     }
                                     else if (sprite.can_push && sprite_2.can_push) {
-                                        FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale, true);
-                                        FunctionsLib::UpdatePosition(pos_2.pos - push_vector, pos_2, sprite_2, size.scale, true);
+                                        FunctionsLib::UpdatePosition(pos.pos + push_vector , pos, sprite, size.scale);
+                                        FunctionsLib::UpdatePosition(pos_2.pos - push_vector, pos_2, sprite_2, size.scale);
                                     }
                                     else if (!sprite.can_push && !sprite_2.can_push){
                                         // no sprite can push
@@ -615,6 +674,7 @@ inline void Render_Scene(ecs::World& world, float dt)
     auto& ctx = world.get_resource<env::SDLContext>();
     auto& stats = world.get_resource<env::Stats>();
     auto &ecsInspector = world.get_resource<EcsInspector>();
+    auto &rmlCtx = world.get_resource<env::RmlUIContext>();
 
     // --- ImGui: frame start UI building ---
     ImGui_ImplSDLRenderer3_NewFrame();
@@ -639,6 +699,9 @@ inline void Render_Scene(ecs::World& world, float dt)
         }
         was_showing_cursor = env::show_imgui;
     }
+
+    // --- RmlUi: update layout/state before rendering ---
+    rmlCtx.context->Update();
 
     SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
     SDL_RenderClear(ctx.renderer);
@@ -666,6 +729,9 @@ inline void Render_Scene(ecs::World& world, float dt)
     }
 
     stats.UpdateStats(ctx.renderer, dt);
+
+    // --- RmlUi: draw HUD over the scene, under ImGui ---
+    rmlCtx.context->Render();
 
     ImGui::Render();
 

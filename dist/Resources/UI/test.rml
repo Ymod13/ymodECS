@@ -1,0 +1,9 @@
+<!-- test.rml -->
+<rml>
+<head>
+    <link type="text/rcss" href="test.rcss"/>
+</head>
+<body>
+    <div class="content">ymodECS</div>
+</body>
+</rml>

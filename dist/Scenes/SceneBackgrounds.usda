@@ -16,7 +16,8 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (1100.0, 600.0)
+			 float2 pos = (0.0, 100.0)
+			 float2 map_pos = (1000, 1000)
 		}
 		
 		def "Size"

@@ -62,6 +62,7 @@ def "Scene" {
 			string collision_type = "RADIUS"
 			bool overlaps_only = true;
 			bool draw_debug_shapes = true
+			float pivot_y = 0.5
 		}
 		
 		def "ZOrder"

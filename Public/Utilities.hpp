@@ -41,10 +41,10 @@ namespace Utils {
 
     class FunctionsLib {
     public:
-        static void UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_screen = true);
+        static void UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool update_map_pos = false);
         static void RestoreOldPosition(Position &pos, Sprite &sprite, const Vector2D &scale);
         static void Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, const SDL_Scancode dir_2_key, const bool* keys, float &vel, const float &acceleration, const float &max_vel, const float &dt);
-        static bool clamp_screen_position(Vector2D &pos, const Vector2D &scale, const SDL_Texture *SpriteTexture);
+        static bool clamp_position_map(Vector2D &pos, const Vector2D &scale, const SDL_Texture *SpriteTexture);
         static bool check_radius_collision(const float &radius_a, const float &radius_b, const Vector2D &center_a, const Vector2D &center_b, Vector2D &OutPushVector);
         static bool check_radius_rectangle_collision(const float &radius_a, const Vector2D &center_a, const Sprite& sprite_b_rect, Vector2D &OutPushVector);
         static bool check_radius_multicircle_collision(const float &radius_a, const Vector2D &center_a, const std::vector<Collisions::WorldCircle> &circles, Vector2D &OutPushVector);

@@ -16,7 +16,7 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (800.0, 600.0)
+			 float2 pos = (1000.0, 1000.0)
 		}
 		
 		def "Size"
@@ -48,6 +48,7 @@ def "Scene" {
 			string collision_type = "MULTI_CIRCLE"
 			bool can_push = true
 			bool draw_debug_shapes = true
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"
@@ -66,7 +67,7 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (400.0, 200.0)
+			 float2 pos = (400.0, 2000.0)
 		}
 		
 		def "Size"
@@ -81,7 +82,7 @@ def "Scene" {
 
 		def "Velocity"
 		{
-			float2 vel = (0.0, 10.0)
+			float2 vel = (0.0, -10.0)
 			float2 max_vel = (0.0, 10.0)
 			float2 acceleration = (0.0, 0.0)
 		}
@@ -98,6 +99,7 @@ def "Scene" {
 			string collision_type = "RADIUS"
 			bool can_push = false
 			bool draw_debug_shapes = true	
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"
@@ -146,9 +148,10 @@ def "Scene" {
 		def "Sprite"
 		{
 			string filename = "tree_48x48.png"
-			string collision_type = "RECTANGLE"
+			#string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
 			bool draw_debug_shapes = true
+			float pivot_y = 1.0
 		}
 		
 		def "ZOrder"

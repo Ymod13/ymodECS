@@ -11,6 +11,9 @@
 
 #include "lua.h"
 #include "MathUtils.hpp"
+#include "RmlRenderInterface.hpp"
+#include "RmlSystemInterface.hpp"
+#include "RmlUi/Core/Context.h"
 
 using namespace MathUtils;
 namespace ecs {
@@ -29,6 +32,7 @@ namespace env
 
     inline Vector2D map_size = Vector2D(10000, 10000);
     inline Vector2D camera_pos = Vector2D(0, 0); // screen represents camera view. this pos represents top-left corner of the camera
+    inline float map_movement_boundaries = 50.0f; // percentage of the screen used to move the map.
 
     inline bool is_text_debug = false;
     inline bool is_input_text_debug = false;
@@ -88,6 +92,12 @@ namespace env
         void InitGamepad(SDL_Gamepad* new_gamepad) {
             gamepad = new_gamepad;
         }
+    };
+
+    struct RmlUIContext {
+        Rml::Context* context = nullptr;
+        RmlRenderInterface* renderInterface = nullptr;
+        RmlSystemInterface* systemInterface = nullptr;
     };
 
     struct InputState {

@@ -27,8 +27,9 @@ struct Template {};
 
 struct Position {
 
-    Vector2D pos;
-    Vector2D old_pos;
+    Vector2D pos;     // Screen position
+    Vector2D old_pos; // Old screen position
+    Vector2D map_pos; // Location on map
 
     Position() {};
     Position(Vector2D start_pos) : pos(start_pos), old_pos(start_pos){ }

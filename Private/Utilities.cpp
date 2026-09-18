@@ -15,12 +15,12 @@
 
 using namespace Utils;
 
-void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_screen) {
+void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool update_map_pos) {
     pos.old_pos = pos.pos;
     pos.pos = new_pos;
 
-    // OPTIONAL: Clamp position to screen limits
-    //clamp_screen_position(pos.pos, scale, sprite.texture.get());
+    // OPTIONAL: Clamp position to map limits
+    clamp_position_map(pos.pos, scale, sprite.texture.get());
 
     sprite.rect.x = sprite.scaled_rect.x = pos.pos.x;
     sprite.rect.y = sprite.scaled_rect.y = pos.pos.y;
@@ -67,7 +67,7 @@ void FunctionsLib::Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, cons
 }
 //-------------------------------------------------------------------------------------------------------------
 
-bool FunctionsLib::clamp_screen_position(Vector2D &pos, const Vector2D &scale, const SDL_Texture *SpriteTexture) {
+bool FunctionsLib::clamp_position_map(Vector2D &pos, const Vector2D &scale, const SDL_Texture *SpriteTexture) {
     bool clamped = false;
 
     if (pos.x < 0) {
@@ -81,13 +81,13 @@ bool FunctionsLib::clamp_screen_position(Vector2D &pos, const Vector2D &scale, c
     }
 
     if (SpriteTexture) {
-        if (pos.x + SpriteTexture->w * scale.x > env::screen_width) {
-            pos.x = env::screen_width - SpriteTexture->w * scale.x;
+        if (pos.x + SpriteTexture->w * scale.x > env::map_size.x) {
+            pos.x = env::map_size.x - SpriteTexture->w * scale.x;
             clamped = true;
         }
 
-        if (pos.y + SpriteTexture->h * scale.y > env::screen_height) {
-            pos.y = env::screen_height - SpriteTexture->h * scale.y;
+        if (pos.y + SpriteTexture->h * scale.y > env::map_size.y) {
+            pos.y = env::map_size.y - SpriteTexture->h * scale.y;
             clamped = true;
         }
     }
