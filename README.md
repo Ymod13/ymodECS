@@ -7,6 +7,7 @@ Here is a recap of all the features:
 - LUA support
 - USD support
 - ImGUI support
+- RmlUI support
 - Collisions
 - Multithreading
 - Access system (first pass stage, not completely integrated in the engine)
