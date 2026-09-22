@@ -89,7 +89,8 @@ void LuaUtils::LoadLuaConfig(lua_State* in_lua_state) {
 
     // CAMERA
     GetLuaVariable<Vector2D>(in_lua_state, "map_size", env::map_size);
-    GetLuaVariable<Vector2D>(in_lua_state, "camera_pos", env::camera_pos);
+    GetLuaVariable<Vector2D>(in_lua_state, "camera_start_pos", env::camera_start_pos);
+    GetLuaVariable<float>(in_lua_state, "map_movement_boundaries", env::map_movement_boundaries);
 
     // FOLDERS
     GetLuaVariable<std::string>(in_lua_state, "sprites_folder", env::sprites_folder);

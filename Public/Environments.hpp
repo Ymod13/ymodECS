@@ -31,8 +31,8 @@ namespace env
     inline bool is_fullscreen = false;
 
     inline Vector2D map_size = Vector2D(10000, 10000);
-    inline Vector2D camera_pos = Vector2D(0, 0); // screen represents camera view. this pos represents top-left corner of the camera
-    inline float map_movement_boundaries = 50.0f; // percentage of the screen used to move the map.
+    inline Vector2D camera_start_pos = Vector2D(0, 0); // screen represents camera view. this pos represents top-left corner of the camera view
+    inline float map_movement_boundaries = 0.5f; // percentage of the screen used to move the map.
 
     inline bool is_text_debug = false;
     inline bool is_input_text_debug = false;
@@ -42,13 +42,22 @@ namespace env
     inline bool show_imgui = false;
 
     inline Vector2D player_pos;
+    inline Vector2D player_screen_pos;
     inline ecs::EntityID player_id;
 
+    struct Camera {
+        Vector2D pos;
+        Vector2D old_pos;
+        Vector2D delta_pos;
+        Vector2D current_pos;
+        float movement_bounds = 100.0f;
+    };
 
     struct Stats {
         float stats_timer = 0.0f;
         float fps = 0.0f;
         Vector2D mouse_screen_pos;
+        Vector2D camera_position;
 
         void UpdateStats( SDL_Renderer* renderer, const float& dt) {
             if (env::display_stats) {
@@ -63,6 +72,7 @@ namespace env
                 SDL_SetRenderScale(renderer, 2.0f, 2.0f);
                 SDL_RenderDebugTextFormat(renderer, 5.0f, 5.0f, "FPS: %.1f", fps);
                 SDL_RenderDebugTextFormat(renderer, 5.0f, 15.0f, "Mouse: x: %.0f; y: %.0f", mouse_screen_pos.x,  mouse_screen_pos.y);
+                SDL_RenderDebugTextFormat(renderer, 5.0f, 25.0f, "Camera: x: %.0f; y: %.0f", camera_position.x,  camera_position.y);
                 SDL_SetRenderScale(renderer, 1.0f, 1.0f);
             }
         }

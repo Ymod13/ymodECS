@@ -15,32 +15,41 @@
 
 using namespace Utils;
 
-void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool update_map_pos) {
+void FunctionsLib::UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_map_limits) {
     pos.old_pos = pos.pos;
     pos.pos = new_pos;
+    pos.delta_pos = pos.pos - pos.old_pos;
 
     // OPTIONAL: Clamp position to map limits
-    clamp_position_map(pos.pos, scale, sprite.texture.get());
+    if (clamp_to_map_limits) {
+        clamp_position_map(pos.pos, scale, sprite.texture.get());
+    }
+}
+//-------------------------------------------------------------------------------------------------------------
 
-    sprite.rect.x = sprite.scaled_rect.x = pos.pos.x;
-    sprite.rect.y = sprite.scaled_rect.y = pos.pos.y;
+void FunctionsLib::UpdateScreenPosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_screen) {
+    pos.screen_pos = new_pos;
+
+    // this is the value used to render the sprite in the right location on screen
+    sprite.rect.x = sprite.scaled_rect.x = pos.screen_pos.x;
+    sprite.rect.y = sprite.scaled_rect.y = pos.screen_pos.y;
 
     sprite.scaled_rect.w = sprite.rect.w * scale.x;
     sprite.scaled_rect.h = sprite.rect.h * scale.y;
 
-    sprite.center.x = pos.pos.x + sprite.scaled_rect.w / 2;
-    sprite.center.y = pos.pos.y + sprite.scaled_rect.h / 2;
+    sprite.center.x = pos.screen_pos.x + sprite.scaled_rect.w / 2;
+    sprite.center.y = pos.screen_pos.y + sprite.scaled_rect.h / 2;
 
-    sprite.bounding_radius = Utils::FunctionsLib::CalculateRectRadius(sprite.scaled_rect);
+    sprite.bounding_radius = CalculateRectRadius(sprite.scaled_rect);
 }
+//-------------------------------------------------------------------------------------------------------------
 
 void FunctionsLib::RestoreOldPosition(Position &pos, Sprite &sprite, const Vector2D &scale) {
     UpdatePosition(pos.old_pos, pos, sprite, scale, true);
 }
-
 //-------------------------------------------------------------------------------------------------------------
 
-void FunctionsLib::Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, const SDL_Scancode dir_2_key, const bool* keys, float &vel, const float &acceleration, const float &max_vel, const float &dt)
+void FunctionsLib::Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, const SDL_Scancode dir_2_key, const bool* keys, float &vel, const float &acceleration, const float &deceleration, const float &max_vel, const float &dt)
 {
     if (keys[dir_1_key] && !keys[dir_2_key]) {
         if (vel > -max_vel) {
@@ -56,9 +65,9 @@ void FunctionsLib::Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, cons
 
     if ((!keys[dir_2_key] && !keys[dir_1_key]) || (keys[dir_2_key] && keys[dir_1_key])) {
         if (vel < 0) {
-            vel = std::clamp(vel += acceleration*dt, -max_vel, 0.0f);
+            vel = std::clamp(vel += deceleration*dt, -max_vel, 0.0f);
         } else if (vel > 0) {
-            vel = std::clamp(vel -= acceleration*dt, 0.0f, max_vel);
+            vel = std::clamp(vel -= deceleration*dt, 0.0f, max_vel);
         }
         else {
             vel = 0;
@@ -93,6 +102,17 @@ bool FunctionsLib::clamp_position_map(Vector2D &pos, const Vector2D &scale, cons
     }
 
     return clamped;
+}
+//-------------------------------------------------------------------------------------------------------------
+
+Vector2D FunctionsLib::MapToWindow(const Vector2D &map_pos, const Vector2D &cam_pos) {
+    //return { map_pos.x - cam_pos.x, map_pos.y - cam_pos.y };
+    Vector2D result;
+
+    Vector2D top_left = {cam_pos.x - env::screen_width/2, cam_pos.y - env::screen_height/2};
+
+    return result;
+
 }
 //-------------------------------------------------------------------------------------------------------------
 

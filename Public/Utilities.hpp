@@ -41,10 +41,15 @@ namespace Utils {
 
     class FunctionsLib {
     public:
-        static void UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool update_map_pos = false);
+        // position and map
+        static void UpdatePosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_map_limits = false);
+        static void UpdateScreenPosition(const Vector2D &new_pos, Position &pos, Sprite &sprite, const Vector2D &scale, bool clamp_to_screen = false);
         static void RestoreOldPosition(Position &pos, Sprite &sprite, const Vector2D &scale);
-        static void Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, const SDL_Scancode dir_2_key, const bool* keys, float &vel, const float &acceleration, const float &max_vel, const float &dt);
+        static void Keyboard_vel_axis_movement(const SDL_Scancode dir_1_key, const SDL_Scancode dir_2_key, const bool* keys, float &vel, const float &acceleration,  const float &deceleration, const float &max_vel, const float &dt);
         static bool clamp_position_map(Vector2D &pos, const Vector2D &scale, const SDL_Texture *SpriteTexture);
+        static Vector2D MapToWindow(const Vector2D &map_pos, const Vector2D &cam_pos);
+
+        // Collisions
         static bool check_radius_collision(const float &radius_a, const float &radius_b, const Vector2D &center_a, const Vector2D &center_b, Vector2D &OutPushVector);
         static bool check_radius_rectangle_collision(const float &radius_a, const Vector2D &center_a, const Sprite& sprite_b_rect, Vector2D &OutPushVector);
         static bool check_radius_multicircle_collision(const float &radius_a, const Vector2D &center_a, const std::vector<Collisions::WorldCircle> &circles, Vector2D &OutPushVector);
@@ -55,11 +60,14 @@ namespace Utils {
         static float CalculateRectRadius(const SDL_FRect& rect);
         static void GenerateCircleCluster(Sprite& obj, int cellSize = Collisions::cell_size, Uint8 alphaThreshold = Collisions::alpha_threshold);
         static std::vector<Collisions::WorldCircle> GetWorldColliders(const Sprite& obj);
+
+        // Z-Order
         static float ComputeDepth(const Position& position, const Sprite& sprite);
         static void InsertionSortByDepth(std::vector<ecs::RenderableEntry>& entries);
         static void DynamicZOrdering(ecs::World &world, std::vector<ecs::RenderableEntry>& entries, const bool &is_first_ordering);
 
         static bool LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite);
+
         static void SpawnBullet(ecs::World &world, const std::uint32_t owner_id, const env::BulletType bullet_type, const Vector2D &start_pos, const Vector2D &end_pos);
 
         static void DrawCircle(SDL_Renderer* renderer, const Vector2D &center, float radius, Uint8 r=255, Uint8 g=0, Uint8 b=0, Uint8 a=255);

@@ -22,6 +22,8 @@ namespace MathUtils {
         Vector2D operator-(const Vector2D& v) const { return Vector2D(x - v.x, y - v.y); }
         Vector2D& operator-=(const Vector2D& v) { x -= v.x; y -= v.y; return *this; }
 
+        bool operator!=(const Vector2D& v) { return (x!=v.x || y!=v.y); }
+
         // Scalar Mul
         Vector2D operator*(float scalar) const { return Vector2D(x * scalar, y * scalar); }
 
@@ -47,6 +49,16 @@ namespace MathUtils {
 
         };
     };
+
+    static Vector2D SmoothMoveTowards(const Vector2D& current, const Vector2D& target, float smoothing, float deltaTime)
+    {
+        float t = 1.0f - std::exp(-smoothing * deltaTime);
+
+        return {
+            current.x + (target.x - current.x) * t,
+            current.y + (target.y - current.y) * t
+        };
+    }
 }
 
 #endif //YMODECS_MATHUTILS_HPP

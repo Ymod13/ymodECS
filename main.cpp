@@ -55,6 +55,7 @@ int main()
     scheduler.add<EnemiesMovementAccess> ("EnemiesMovementSystem", Update_Enemies_Movement);
     scheduler.add<BulletsMovementAccess> ("BulletsMovementSystem", Update_Bullets_Movement);
     scheduler.add<CollisionDetectionAccess> ("CollisionDetectionSystem", Collision_detection);
+    scheduler.add<WorldMapAccess> ("WorldMapSystem", World_Map_Update);
     scheduler.add<RenderAccess> ("RenderSystem", Render_Scene);
 
     ecs::EntityID single_tread_entity = game_world.create();

@@ -27,9 +27,10 @@ struct Template {};
 
 struct Position {
 
-    Vector2D pos;     // Screen position
-    Vector2D old_pos; // Old screen position
-    Vector2D map_pos; // Location on map
+    Vector2D pos;     // absolute position on the map
+    Vector2D old_pos; // Old absolute position on the map
+    Vector2D delta_pos; // delta between old and new position
+    Vector2D screen_pos; // screen position
 
     Position() {};
     Position(Vector2D start_pos) : pos(start_pos), old_pos(start_pos){ }
@@ -48,12 +49,14 @@ struct Velocity {
     Vector2D vel;
     Vector2D max_vel;
     Vector2D acceleration;
+    Vector2D deceleration;
 
     void CopyData(const Velocity *in_vel) {
         if (in_vel == nullptr) return;
         vel = in_vel->vel;
         max_vel = in_vel->max_vel;
         acceleration = in_vel->acceleration;
+        deceleration = in_vel->deceleration;
     }
 };
 

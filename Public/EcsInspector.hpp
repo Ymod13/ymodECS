@@ -90,7 +90,10 @@ private:
             auto& pos = world.get<Position>(e);
             if (ImGui::CollapsingHeader("Position", ImGuiTreeNodeFlags_DefaultOpen)) {
                 float v[2] = {pos.pos.x, pos.pos.y};
-                ImGui::DragFloat2("xy", v);
+                ImGui::DragFloat2(" map position", v);
+
+                float v2[2] = {pos.screen_pos.x, pos.screen_pos.y};
+                ImGui::DragFloat2(" screen pos", v2);
             }
         }
         if (world.has<Sprite>(e)) {

@@ -53,6 +53,12 @@ using CollisionDetectionAccess = ecs::AccessMode<>
     ::Read<Sprite>
     ::Write<Position>;
 
+using WorldMapAccess = ecs::AccessMode<>
+    ::Read<Velocity>
+    ::Read<Size>
+    ::Read<Sprite>
+    ::Write<Position>;
+
 using RenderAccess = ecs::AccessMode<>
     ::Read<Position>
     ::Read<Name>;
@@ -142,11 +148,17 @@ inline bool Init_Systems(ecs::World& world) {
     EcsInspector ecsInspector;
     world.add_resource(EcsInspector{ecsInspector});
 
+    // Camera
+    env::Camera camera;
+    camera.movement_bounds = env::map_movement_boundaries;
+    camera.pos = camera.old_pos = env::camera_start_pos;
+
     // World resources
     world.add_resource(env::SDLContext{window, renderer});
     world.add_resource(env::RmlUIContext{rmlContext, rmlRenderInterface, rmlSystemInterface});
     world.add_resource(env::InputState{});
     world.add_resource(env::Stats{});
+    world.add_resource(env::Camera{});
 
     // init all sprite textures components
     auto& ctx = world.get_resource<env::SDLContext>();
@@ -260,6 +272,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
     auto& input = world.get_resource<env::InputState>();
     auto& stats = world.get_resource<env::Stats>();
     auto& rmlCtx = world.get_resource<env::RmlUIContext>();
+    auto& camera = world.get_resource<env::Camera>();
 
     Vector2D mouse_pos;
     Vector2D mouse_rel;
@@ -308,7 +321,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
                 case SDL_EVENT_MOUSE_BUTTON_DOWN:
                     if (input.event.button.button == SDL_BUTTON_LEFT) {
                         // left click
-                        Vector2D dest_pos = Vector2D(input.event.motion.x, input.event.motion.y);
+                        Vector2D dest_pos = Vector2D(camera.current_pos.x + input.event.motion.x, camera.current_pos.y +input.event.motion.y);
                         FunctionsLib::SpawnBullet(world, env::player_id, env::PISTOL, env::player_pos, dest_pos);
                     }
                     break;
@@ -447,6 +460,7 @@ inline void Handle_Input(ecs::World& world, float dt) {
     world.each<UI, GameCursor, Position, Sprite, Size>([&, dt](ecs::EntityID e, UI& ui, GameCursor &game_cursor, Position& pos, Sprite &sprite, Size &size) {
        if (is_mouse_moved) {
            FunctionsLib::UpdatePosition(mouse_pos, pos, sprite, size.scale);
+           FunctionsLib::UpdateScreenPosition(mouse_pos, pos, sprite, size.scale);
            stats.mouse_screen_pos = mouse_pos;;
            UserInterface::MouseCursorId = e;
        }
@@ -466,16 +480,17 @@ inline void Update_Player_Movement(ecs::World& world, float dt)
     {
         if (!env::show_imgui) {
             // y axis movement
-            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.max_vel.y, dt);
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.deceleration.x, vel.max_vel.y, dt);
 
             // x axis movement
-            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.max_vel.x, dt);
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.deceleration.y, vel.max_vel.x, dt);
 
             // Update position
             FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
         }
 
-        env::player_pos = sprite.center;
+        Vector2D offset = {sprite.scaled_rect.w/2, sprite.scaled_rect.h/2};
+        env::player_pos = pos.pos + offset;
 
     },  ecs::World::Exclude<Template>{});
 }
@@ -669,6 +684,65 @@ inline void Collision_detection(ecs::World& world, float dt) {
 }
 //------------------------------------------------------------------------------------------------------------------------
 
+inline void World_Map_Update(ecs::World& world, float dt) {
+
+    if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
+        auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
+        auto& camera = world.get_resource<env::Camera>();
+        auto& stats = world.get_resource<env::Stats>();
+
+        camera.old_pos = camera.pos;
+
+        // align camera pos with player pos oly if player exits camara view hot spot defined by env::map_movement_boundaries
+        if (env::player_screen_pos.x > (env::screen_width - (env::screen_width * env::map_movement_boundaries) / 2 ) ||
+            env::player_screen_pos.x < ((env::screen_width * env::map_movement_boundaries) / 2 ) ||
+            env::player_screen_pos.y > (env::screen_height - (env::screen_height * env::map_movement_boundaries) / 2 ) ||
+            env::player_screen_pos.y < ((env::screen_height * env::map_movement_boundaries) / 2 )
+            ) {
+            camera.pos.x = env::player_pos.x - env::screen_width/2;
+            camera.pos.y = env::player_pos.y - env::screen_height/2;
+        }
+
+        //clamp camera pos to map size
+        camera.pos.x = std::clamp(camera.pos.x, 0.0f, env::map_size.x-env::screen_width);
+        camera.pos.y = std::clamp(camera.pos.y, 0.0f, env::map_size.y-env::screen_height);
+
+        camera.delta_pos = camera.pos - camera.old_pos;
+
+        stats.camera_position = camera.pos;
+
+        for (auto& [layer, renderable_entries] : renderables_by_layer) {
+            if (layer == UserInterface::LayerType::UI) {
+                continue;
+            }
+            for (auto& r : renderable_entries) {
+
+                auto& visibility = world.get<Visibility>(r.entity);
+
+                if (visibility.is_visible) {
+                    auto &sprite = world.get<Sprite>(r.entity);
+                    auto &pos = world.get<Position>(r.entity);
+                    auto &size = world.get<Size>(r.entity);
+
+                    camera.current_pos = MathUtils::SmoothMoveTowards(camera.current_pos, camera.pos, 1.0f, dt);
+
+                    FunctionsLib::UpdateScreenPosition(pos.pos - camera.current_pos, pos, sprite, size.scale);
+
+                    if (world.has<Player>(r.entity)) {
+                        env::player_screen_pos = pos.screen_pos;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        std::cerr << "Layer resource found, cannot render sprites" << std::endl;
+        return;
+    }
+}
+//------------------------------------------------------------------------------------------------------------------------
+
 inline void Render_Scene(ecs::World& world, float dt)
 {
     auto& ctx = world.get_resource<env::SDLContext>();
@@ -718,6 +792,8 @@ inline void Render_Scene(ecs::World& world, float dt)
                 auto& sprite = world.get<Sprite>(r.entity);
                 auto& name = world.get<Name>(r.entity);
                 auto& visibility = world.get<Visibility>(r.entity);
+                auto& pos = world.get<Position>(r.entity);
+
                 FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
             }
         }
