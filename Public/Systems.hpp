@@ -691,26 +691,30 @@ inline void World_Map_Update(ecs::World& world, float dt) {
         auto& camera = world.get_resource<env::Camera>();
         auto& stats = world.get_resource<env::Stats>();
 
+        const float half_screen_width = (float)env::screen_width / 2;
+        const float half_screen_height = (float)env::screen_height / 2;
+        const float offset_x = half_screen_width * env::map_movement_boundaries;
+        const float offset_y = half_screen_height * env::map_movement_boundaries;
+
         camera.old_pos = camera.pos;
+        camera.x_axis_bounds = Vector2D{(static_cast<float>(env::screen_width) - offset_x), offset_x };
+        camera.y_axis_bounds = Vector2D{(static_cast<float>(env::screen_height) - offset_y), offset_y};
 
         // align camera pos with player pos oly if player exits camara view hot spot defined by env::map_movement_boundaries
-        if (env::player_screen_pos.x > (env::screen_width - (env::screen_width * env::map_movement_boundaries) / 2 ) ||
-            env::player_screen_pos.x < ((env::screen_width * env::map_movement_boundaries) / 2 ) ||
-            env::player_screen_pos.y > (env::screen_height - (env::screen_height * env::map_movement_boundaries) / 2 ) ||
-            env::player_screen_pos.y < ((env::screen_height * env::map_movement_boundaries) / 2 )
+        if (env::player_screen_pos.x > camera.x_axis_bounds.x ||
+            env::player_screen_pos.x < camera.x_axis_bounds.y ||
+            env::player_screen_pos.y > camera.y_axis_bounds.x ||
+            env::player_screen_pos.y < camera.y_axis_bounds.y
             ) {
-            camera.pos.x = env::player_pos.x - env::screen_width/2;
-            camera.pos.y = env::player_pos.y - env::screen_height/2;
+            camera.pos.x = env::player_pos.x - half_screen_width;
+            camera.pos.y = env::player_pos.y - half_screen_height;
         }
 
         // TODO: player movement mixed with cam movement is not ideal, but for now it works. Fix this
 
-        camera.pos.x = env::player_pos.x - env::screen_width/2;
-        camera.pos.y = env::player_pos.y - env::screen_height/2;
-
         //clamp camera pos to map size
-        camera.pos.x = std::clamp(camera.pos.x, 0.0f, env::map_size.x-env::screen_width);
-        camera.pos.y = std::clamp(camera.pos.y, 0.0f, env::map_size.y-env::screen_height);
+        camera.pos.x = std::clamp(camera.pos.x, 0.0f, env::map_size.x-static_cast<float>(env::screen_width));
+        camera.pos.y = std::clamp(camera.pos.y, 0.0f, env::map_size.y-static_cast<float>(env::screen_height));
 
         camera.delta_pos = camera.pos - camera.old_pos;
 

@@ -51,6 +51,9 @@ namespace env
         Vector2D delta_pos;
         Vector2D current_pos;
         float movement_bounds = 100.0f;
+
+        Vector2D x_axis_bounds;
+        Vector2D y_axis_bounds;
     };
 
     struct Stats {
