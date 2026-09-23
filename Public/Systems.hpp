@@ -148,17 +148,20 @@ inline bool Init_Systems(ecs::World& world) {
     EcsInspector ecsInspector;
     world.add_resource(EcsInspector{ecsInspector});
 
-    // Camera
-    env::Camera camera;
-    camera.movement_bounds = env::map_movement_boundaries;
-    camera.pos = camera.old_pos = env::camera_start_pos;
-
     // World resources
     world.add_resource(env::SDLContext{window, renderer});
     world.add_resource(env::RmlUIContext{rmlContext, rmlRenderInterface, rmlSystemInterface});
     world.add_resource(env::InputState{});
     world.add_resource(env::Stats{});
     world.add_resource(env::Camera{});
+
+    // Camera
+    auto& camera = world.get_resource<env::Camera>();
+    camera.movement_bounds = env::map_movement_boundaries;
+    camera.pos = camera.old_pos = env::camera_start_pos;
+    camera.acceleration = env::camera_acceleration;
+    camera.deceleration = env::camera_deceleration;
+    camera.max_speed = env::camera_max_speed;
 
     // init all sprite textures components
     auto& ctx = world.get_resource<env::SDLContext>();
@@ -214,6 +217,13 @@ inline bool Init_Systems(ecs::World& world) {
                 std::cout << " updated Depth: " << z_order.depth << std::endl;
             }
             renderables_by_layer[z_order.layer].push_back({id, z_order.layer, z_order.depth});
+        }
+
+        if (world.has<Player>(id)) {
+            auto &vel = world.get<Velocity>(id);
+            env::player_max_speed = vel.max_vel;
+            env::player_acceleration = vel.acceleration.x;
+            env::player_deceleration = vel.deceleration.x;
         }
 
     },  ecs::World::Exclude<Template>{});
@@ -480,10 +490,10 @@ inline void Update_Player_Movement(ecs::World& world, float dt)
     {
         if (!env::show_imgui) {
             // y axis movement
-            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.deceleration.x, vel.max_vel.y, dt);
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_W, SDL_SCANCODE_S, input.keys, vel.vel.y, vel.acceleration.y, vel.deceleration.x, vel.max_vel, dt);
 
             // x axis movement
-            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.deceleration.y, vel.max_vel.x, dt);
+            FunctionsLib::Keyboard_vel_axis_movement(SDL_SCANCODE_A, SDL_SCANCODE_D, input.keys, vel.vel.x, vel.acceleration.x, vel.deceleration.y, vel.max_vel, dt);
 
             // Update position
             FunctionsLib::UpdatePosition(pos.pos + vel.vel * dt, pos, sprite, size.scale, true);
@@ -701,24 +711,26 @@ inline void World_Map_Update(ecs::World& world, float dt) {
         camera.y_axis_bounds = Vector2D{(static_cast<float>(env::screen_height) - offset_y), offset_y};
 
         // align camera pos with player pos oly if player exits camara view hot spot defined by env::map_movement_boundaries
-        if (env::player_screen_pos.x > camera.x_axis_bounds.x ||
-            env::player_screen_pos.x < camera.x_axis_bounds.y ||
-            env::player_screen_pos.y > camera.y_axis_bounds.x ||
-            env::player_screen_pos.y < camera.y_axis_bounds.y
-            ) {
+        if (env::player_screen_pos.x > camera.x_axis_bounds.x || env::player_screen_pos.x < camera.x_axis_bounds.y ||
+            env::player_screen_pos.y > camera.y_axis_bounds.x || env::player_screen_pos.y < camera.y_axis_bounds.y ) {
             camera.pos.x = env::player_pos.x - half_screen_width;
             camera.pos.y = env::player_pos.y - half_screen_height;
         }
-
-        // TODO: player movement mixed with cam movement is not ideal, but for now it works. Fix this
 
         //clamp camera pos to map size
         camera.pos.x = std::clamp(camera.pos.x, 0.0f, env::map_size.x-static_cast<float>(env::screen_width));
         camera.pos.y = std::clamp(camera.pos.y, 0.0f, env::map_size.y-static_cast<float>(env::screen_height));
 
         camera.delta_pos = camera.pos - camera.old_pos;
-
         stats.camera_position = camera.pos;
+
+        camera.current_pos = MathUtils::AccelerateTowards(
+                camera.current_pos,camera.pos,camera.follow_velocity,
+                camera.acceleration,
+                camera.deceleration,
+                env::player_max_speed*2.0f, //camera.max_speed,
+                dt
+            );
 
         for (auto& [layer, renderable_entries] : renderables_by_layer) {
             if (layer == UserInterface::LayerType::UI) {
@@ -733,8 +745,6 @@ inline void World_Map_Update(ecs::World& world, float dt) {
                     auto &pos = world.get<Position>(r.entity);
                     auto &size = world.get<Size>(r.entity);
 
-                    camera.current_pos = MathUtils::SmoothMoveTowards(camera.current_pos, camera.pos, 1.0f, dt);
-
                     FunctionsLib::UpdateScreenPosition(pos.pos - camera.current_pos, pos, sprite, size.scale);
 
                     if (world.has<Player>(r.entity)) {
@@ -746,7 +756,7 @@ inline void World_Map_Update(ecs::World& world, float dt) {
     }
     else
     {
-        std::cerr << "Layer resource found, cannot render sprites" << std::endl;
+        std::cerr << "Layer resource not found, cannot render sprites" << std::endl;
         return;
     }
 }

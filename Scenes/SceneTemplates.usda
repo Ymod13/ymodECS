@@ -36,7 +36,7 @@ def "Scene" {
 		def "Velocity"
 		{
 			float2 vel = (1.0, 1.0)
-			float2 max_vel = (1.0, 1.0)
+			float max_vel = 1.0
 			float2 acceleration = (1.0, 1.0)
 		}
 

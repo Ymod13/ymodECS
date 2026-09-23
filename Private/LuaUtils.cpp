@@ -91,6 +91,9 @@ void LuaUtils::LoadLuaConfig(lua_State* in_lua_state) {
     GetLuaVariable<Vector2D>(in_lua_state, "map_size", env::map_size);
     GetLuaVariable<Vector2D>(in_lua_state, "camera_start_pos", env::camera_start_pos);
     GetLuaVariable<float>(in_lua_state, "map_movement_boundaries", env::map_movement_boundaries);
+    GetLuaVariable<float>(in_lua_state, "camera_acceleration", env::camera_acceleration);
+    GetLuaVariable<float>(in_lua_state, "camera_deceleration", env::camera_deceleration);
+    GetLuaVariable<float>(in_lua_state, "camera_max_speed", env::camera_max_speed);
 
     // FOLDERS
     GetLuaVariable<std::string>(in_lua_state, "sprites_folder", env::sprites_folder);

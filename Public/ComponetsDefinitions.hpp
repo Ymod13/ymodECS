@@ -47,7 +47,7 @@ struct Size {
 
 struct Velocity {
     Vector2D vel;
-    Vector2D max_vel;
+    float max_vel=0.0f;
     Vector2D acceleration;
     Vector2D deceleration;
 

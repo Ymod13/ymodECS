@@ -32,7 +32,7 @@ def "Scene" {
 		def "Velocity"
 		{
 			float2 vel = (0.0, 0.0)
-			float2 max_vel = (1500.0, 1500.0)
+			float max_vel = 500.0
 			float2 acceleration = (5000.0, 5000.0)
 			float2 deceleration = (10000.0, 10000.0)
 		}
@@ -84,7 +84,7 @@ def "Scene" {
 		def "Velocity"
 		{
 			float2 vel = (0.0, -10.0)
-			float2 max_vel = (0.0, 10.0)
+			float max_vel = 10.0
 			float2 acceleration = (0.0, 0.0)
 			float2 deceleration = (0.0, 0.0)
 		}
@@ -138,7 +138,6 @@ def "Scene" {
 		def "Velocity"
 		{
         float2 vel = (0.0, 0.0)
-        float2 max_vel = (0.0, 0.0)
 		}
 
 		def "Health"
@@ -191,7 +190,6 @@ def "Scene" {
 		def "Velocity"
 		{
         float2 vel = (0.0, 0.0)
-        float2 max_vel = (0.0, 0.0)
 		}
 
 		def "Health"

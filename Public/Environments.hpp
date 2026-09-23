@@ -33,6 +33,9 @@ namespace env
     inline Vector2D map_size = Vector2D(10000, 10000);
     inline Vector2D camera_start_pos = Vector2D(0, 0); // screen represents camera view. this pos represents top-left corner of the camera view
     inline float map_movement_boundaries = 0.5f; // percentage of the screen used to move the map.
+    inline float camera_deceleration = 0.25f;
+    inline float camera_max_speed = 0.5f;
+    inline float camera_acceleration = 2000.0f;
 
     inline bool is_text_debug = false;
     inline bool is_input_text_debug = false;
@@ -43,6 +46,9 @@ namespace env
 
     inline Vector2D player_pos;
     inline Vector2D player_screen_pos;
+    inline float player_max_speed;
+    inline float player_acceleration;
+    inline float player_deceleration;
     inline ecs::EntityID player_id;
 
     struct Camera {
@@ -54,6 +60,11 @@ namespace env
 
         Vector2D x_axis_bounds;
         Vector2D y_axis_bounds;
+        float acceleration = 2000.0f;
+        float deceleration = 2000.0f;
+        float max_speed = 1800.0f;
+
+        Vector2D follow_velocity;
     };
 
     struct Stats {

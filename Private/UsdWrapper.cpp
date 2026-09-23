@@ -63,7 +63,7 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
 
             UsdWrapper::LoadComponentPrim<Velocity>(world, e, prim, "Velocity",
                FieldPack<Velocity, GfVec2f, Vector2D>{"vel", &Velocity::vel},
-               FieldPack<Velocity, GfVec2f, Vector2D>{"max_vel", &Velocity::max_vel},
+               FieldPack<Velocity, float, float>{"max_vel", &Velocity::max_vel},
                FieldPack<Velocity, GfVec2f, Vector2D>{"acceleration", &Velocity::acceleration},
                FieldPack<Velocity, GfVec2f, Vector2D>{"deceleration", &Velocity::deceleration});
 
