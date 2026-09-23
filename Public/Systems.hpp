@@ -703,6 +703,11 @@ inline void World_Map_Update(ecs::World& world, float dt) {
             camera.pos.y = env::player_pos.y - env::screen_height/2;
         }
 
+        // TODO: player movement mixed with cam movement is not ideal, but for now it works. Fix this
+
+        camera.pos.x = env::player_pos.x - env::screen_width/2;
+        camera.pos.y = env::player_pos.y - env::screen_height/2;
+
         //clamp camera pos to map size
         camera.pos.x = std::clamp(camera.pos.x, 0.0f, env::map_size.x-env::screen_width);
         camera.pos.y = std::clamp(camera.pos.y, 0.0f, env::map_size.y-env::screen_height);

@@ -32,8 +32,9 @@ def "Scene" {
 		def "Velocity"
 		{
 			float2 vel = (0.0, 0.0)
-			float2 max_vel = (200.0, 200.0)
-			float2 acceleration = (1000.0, 1000.0)
+			float2 max_vel = (1500.0, 1500.0)
+			float2 acceleration = (5000.0, 5000.0)
+			float2 deceleration = (10000.0, 10000.0)
 		}
 
 		def "Health"
@@ -85,6 +86,7 @@ def "Scene" {
 			float2 vel = (0.0, -10.0)
 			float2 max_vel = (0.0, 10.0)
 			float2 acceleration = (0.0, 0.0)
+			float2 deceleration = (0.0, 0.0)
 		}
 
 		def "Health"
@@ -119,7 +121,7 @@ def "Scene" {
 
         def "Position"
 		{
-			 float2 pos = (100.0, 100.0)
+			 float2 pos = (1500.0, 1500.0)
 		}
 		
         
@@ -147,7 +149,7 @@ def "Scene" {
 
 		def "Sprite"
 		{
-			string filename = "tree_48x48.png"
+			string filename = "tree_512x512.png"
 			#string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
 			bool draw_debug_shapes = true
@@ -158,6 +160,62 @@ def "Scene" {
 		{
 			string layer = "WORLD_DYNAMIC"
 		}
+		
+		
     }
+	
+	def "Albero" {
+        string entity_type = "static_object"
+
+        def "Name"
+		{
+			 string name = "Albero"
+		}
+
+        def "Position"
+		{
+			 float2 pos = (3500.0, 3500.0)
+		}
+		
+        
+		def "Size"
+		{
+			 float2 scale = (1.0, 1.0)
+		}
+		
+		def "Visibility"
+		{
+			bool is_visible = true;
+		}
+
+		def "Velocity"
+		{
+        float2 vel = (0.0, 0.0)
+        float2 max_vel = (0.0, 0.0)
+		}
+
+		def "Health"
+		{
+			int hp = 10
+			int max_hp = 10
+		}
+
+		def "Sprite"
+		{
+			string filename = "tree_512x512.png"
+			#string collision_type = "RECTANGLE"
+			bool is_static_obstacle = true
+			bool draw_debug_shapes = true
+			float pivot_y = 1.0
+		}
+		
+		def "ZOrder"
+		{
+			string layer = "WORLD_DYNAMIC"
+		}
+		
+		
+    }
+	
 	
 }
