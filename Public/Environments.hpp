@@ -183,6 +183,12 @@ namespace UserInterface {
         FOREGROUND = 400,
         UI = 500
     };
+
+    enum TilingType {
+        REPEAT,
+        FILL,
+        SINGLE
+    };
 }
 
 #endif //YMODECS_ENVIRONMENTS_HPP

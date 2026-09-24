@@ -48,7 +48,7 @@ def "Scene" {
 			string filename = "space_chicken_2.png"
 			string collision_type = "MULTI_CIRCLE"
 			bool can_push = true
-			bool draw_debug_shapes = true
+			bool draw_debug_shapes = false
 			float pivot_y = 1.0
 		}
 		
@@ -83,7 +83,7 @@ def "Scene" {
 
 		def "Velocity"
 		{
-			float2 vel = (0.0, -10.0)
+			float2 vel = (0.0, -100.0)
 			float max_vel = 10.0
 			float2 acceleration = (0.0, 0.0)
 			float2 deceleration = (0.0, 0.0)
@@ -100,7 +100,7 @@ def "Scene" {
 			string filename = "space_fox_2.png"
 			string collision_type = "RADIUS"
 			bool can_push = false
-			bool draw_debug_shapes = true	
+			bool draw_debug_shapes = false	
 			float pivot_y = 1.0
 		}
 		
@@ -151,7 +151,7 @@ def "Scene" {
 			string filename = "tree_512x512.png"
 			#string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
-			bool draw_debug_shapes = true
+			bool draw_debug_shapes = false
 			float pivot_y = 1.0
 		}
 		
@@ -203,7 +203,7 @@ def "Scene" {
 			string filename = "tree_512x512.png"
 			#string collision_type = "RECTANGLE"
 			bool is_static_obstacle = true
-			bool draw_debug_shapes = true
+			bool draw_debug_shapes = false
 			float pivot_y = 1.0
 		}
 		

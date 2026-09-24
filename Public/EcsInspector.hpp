@@ -102,6 +102,17 @@ private:
                 ImGui::Text("Sprite: %s", sprite.filename.c_str());
                 std::string coll_type = Utils::FunctionsLib::EnumToString<Collisions::CollisionType>(sprite.collision_type);
                 ImGui::Text("Collision Type: %s", coll_type.c_str());
+
+                float s_rect[2] = {sprite.scaled_rect.x, sprite.scaled_rect.y};
+                ImGui::DragFloat2(" Scaled Rect position", s_rect);
+                float s_rect_size[2] = {sprite.scaled_rect.w, sprite.scaled_rect.h};
+                ImGui::DragFloat2(" Scaled Rect size", s_rect_size);
+
+
+                float rect[2] = {sprite.rect.x, sprite.rect.y};
+                ImGui::DragFloat2(" Rect position", rect);
+                float rect_size[2] = {sprite.rect.w, sprite.rect.h};
+                ImGui::DragFloat2(" Rect size", rect_size);
             }
         }
         if (world.has<Visibility>(e)) {

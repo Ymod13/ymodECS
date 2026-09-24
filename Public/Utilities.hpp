@@ -36,6 +36,7 @@ struct Size;
 struct Position;
 struct Name;
 struct Visibility;
+struct BackgroundTile;
 
 namespace Utils {
 
@@ -67,6 +68,7 @@ namespace Utils {
         static void DynamicZOrdering(ecs::World &world, std::vector<ecs::RenderableEntry>& entries, const bool &is_first_ordering);
 
         static bool LoadSprite(SDL_Renderer* renderer, const Size& size, const Position &pos, Sprite& out_sprite);
+        static bool LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &id, SDL_Renderer* renderer);
 
         static void SpawnBullet(ecs::World &world, const std::uint32_t owner_id, const env::BulletType bullet_type, const Vector2D &start_pos, const Vector2D &end_pos);
 

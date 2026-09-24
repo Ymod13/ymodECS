@@ -95,6 +95,9 @@ bool UsdWrapper::LoadUsdFile(const std::string &filepath, ecs::World &world) {
            UsdWrapper::LoadComponentPrim<ZOrder>(world, e, prim, "ZOrder",
            FieldPack<ZOrder, std::string, UserInterface::LayerType>{"layer", &ZOrder::layer},
            FieldPack<ZOrder, float, float>{"depth", &ZOrder::depth});
+
+           UsdWrapper::LoadComponentPrim<BackgroundTile>(world, e, prim, "BackgroundTile",
+           FieldPack<BackgroundTile, std::string, UserInterface::TilingType>{"tiling_type", &BackgroundTile::tiling_type});
         }
     }
 

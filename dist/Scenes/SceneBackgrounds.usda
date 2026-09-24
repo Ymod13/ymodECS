@@ -16,7 +16,7 @@ def "Scene" {
 		
 		def "Position"
 		{
-			 float2 pos = (0.0, 100.0)
+			 float2 pos = (0.0, 0.0)
 		}
 		
 		def "Size"
@@ -31,7 +31,12 @@ def "Scene" {
 
 		def "Sprite"
 		{
-			string filename = "Grass_1_seamless_512.jpg"
+			string filename = "grass_1_512x512.png"
+		}
+		
+		def "BackgroundTile"
+		{
+			string tiling_type = "REPEAT"
 		}
 		
 		def "ZOrder"

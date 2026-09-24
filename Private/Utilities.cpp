@@ -506,14 +506,14 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
         case Collisions::RECTANGLE:
 
             if ( SDL_Texture* spriteTexture = IMG_LoadTexture(renderer, filename.c_str())) {
-                out_sprite.texture.reset(spriteTexture);
+                out_sprite.texture.reset(spriteTexture, SDL_DestroyTexture);
                 out_sprite.rect.w = spriteTexture->w;
                 out_sprite.rect.h = spriteTexture->h;
                 out_sprite.scaled_rect.w = spriteTexture->w * size.scale.x;
                 out_sprite.scaled_rect.h = spriteTexture->h * size.scale.y;
             }
             else {
-                SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error loading Texture: %s (%s)", SDL_GetError(), filename.c_str());
+                SDL_LogError(SDL_LOG_CATEGORY_RENDER,"LoadSprite: Error loading Texture: %s (%s)", SDL_GetError(), filename.c_str());
                 return false;
             }
             break;
@@ -531,14 +531,14 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
                 GenerateCircleCluster(out_sprite);
 
                 if ( SDL_Texture* surfaceTexture = SDL_CreateTextureFromSurface(renderer, surface)) {
-                    out_sprite.texture.reset(surfaceTexture);
+                    out_sprite.texture.reset(surfaceTexture, SDL_DestroyTexture);
                 } else {
-                    SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error loading Texture: %s (%s)", SDL_GetError(), filename.c_str());
+                    SDL_LogError(SDL_LOG_CATEGORY_RENDER,"LoadSprite: Error loading Texture: %s (%s)", SDL_GetError(), filename.c_str());
                     return false;
                 }
             }
             else {
-                SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error loading surface %s (%s)", SDL_GetError(), filename.c_str());
+                SDL_LogError(SDL_LOG_CATEGORY_RENDER, "LoadSprite: Error loading surface %s (%s)", SDL_GetError(), filename.c_str());
                 return false;
             }
             break;
@@ -551,6 +551,130 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
     out_sprite.center.y = pos.pos.y + out_sprite.scaled_rect.h / 2;
 
     out_sprite.bounding_radius = CalculateRectRadius(out_sprite.scaled_rect);
+
+    return true;
+}
+// -------------------------------------------------------------------------------------------------------------
+
+bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &id, SDL_Renderer *renderer) {
+
+    if (!world.has<Size>(id)) {
+        std::cerr << "Error: Entity " << id << " does not have a Size component." << std::endl;
+        return false;
+    }
+    if (!world.has<Name>(id)) {
+        std::cerr << "Error: Entity " << id << " does not have a Name component." << std::endl;
+        return false;
+    }
+    if (!world.has<Position>(id)) {
+        std::cerr << "Error: Entity " << id << " does not have a Position component." << std::endl;
+        return false;
+    }
+    if (!world.has<Sprite>(id)) {
+        std::cerr << "Error: Entity " << id << " does not have a Sprite component." << std::endl;
+        return false;
+    }
+    if (!world.has<BackgroundTile>(id)) {
+       std::cerr << "Error: Entity " << id << " does not have a BackgroundTile component." << std::endl;
+       return false;
+    }
+
+    auto &size = world.get<Size>(id);
+    auto &name = world.get<Name>(id);
+    auto &pos = world.get<Position>(id);
+    auto &sprite = world.get<Sprite>(id);
+    auto &tile = world.get<BackgroundTile>(id);
+
+    // copy key values to avoid sparse/set reallocation due to frequent changes
+    const std::string name_str = name.name;
+    const std::string sprite_filename = sprite.filename;
+    const auto sprite_tiling_type = tile.tiling_type;
+    const auto texture_scale = size.scale;
+
+    const std::string filename = env::sprites_folder + sprite_filename;
+
+    SDL_Texture* spriteTexture = IMG_LoadTexture(renderer, filename.c_str());
+
+    if (!spriteTexture) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER,"LoadBackgroundSprite: Error loading background Texture: %s (%s)", SDL_GetError(), filename.c_str());
+        return false;
+    }
+
+    std::shared_ptr<SDL_Texture> shared_texture(spriteTexture, Sprite::SDLTextureDeleter{});
+
+    // let's make this one a template (so it's not rendered)
+    Template templ;
+    world.add(id, std::move(templ));
+
+    float x_limit = env::map_size.x;
+    float y_limit = env::map_size.y;
+
+    switch (sprite_tiling_type) {
+        case UserInterface::TilingType::FILL:
+            x_limit = 1;
+            y_limit = 1;
+            break;
+    }
+
+    for (float i=0; i<=x_limit; i+= spriteTexture->w*texture_scale.x) {
+        for (float j=0; j<=y_limit; j+= spriteTexture->h*texture_scale.y) {
+            ecs::EntityID bkg_id = world.create();
+
+            Name bkg_name;
+            bkg_name.name = name_str + "_" + std::to_string(i);
+
+            Size bkg_size;
+            bkg_size.scale = texture_scale;
+
+            Sprite bkg_sprite;
+            bkg_sprite.filename = sprite_filename;
+
+            ZOrder z_order;
+            z_order.layer = UserInterface::LayerType::BACKGROUND;
+
+            Visibility bkg_vis;
+            bkg_vis.is_visible = true;
+
+            bkg_sprite.texture = shared_texture;
+            if (sprite_tiling_type==UserInterface::TilingType::FILL) {
+                bkg_sprite.rect.w = env::map_size.x;
+                bkg_sprite.rect.h = env::map_size.y;
+                bkg_sprite.scaled_rect.w = env::map_size.x;
+                bkg_sprite.scaled_rect.h = env::map_size.y;
+            }
+            else {
+                bkg_sprite.rect.w = bkg_sprite.texture->w;
+                bkg_sprite.rect.h = bkg_sprite.texture->h;
+                bkg_sprite.scaled_rect.w = bkg_sprite.texture->w * bkg_size.scale.x;
+                bkg_sprite.scaled_rect.h = bkg_sprite.texture->h * bkg_size.scale.y;
+            }
+
+
+            Position bkg_pos;
+            bkg_pos.pos.x = i;
+            bkg_pos.pos.y = j;
+
+            bkg_sprite.rect.x = bkg_sprite.scaled_rect.x = bkg_pos.pos.x;
+            bkg_sprite.rect.y = bkg_sprite.scaled_rect.y = bkg_pos.pos.y;
+
+            bkg_sprite.center.x = bkg_pos.pos.x + bkg_sprite.scaled_rect.w / 2;
+            bkg_sprite.center.y = bkg_pos.pos.y + bkg_sprite.scaled_rect.h / 2;
+
+            bkg_sprite.bounding_radius = CalculateRectRadius(bkg_sprite.scaled_rect);
+
+            // Add components to world
+            world.add(bkg_id, Actor{});
+            world.add(bkg_id, Background{});
+            world.add(bkg_id, std::move(bkg_name));
+            world.add(bkg_id, std::move(bkg_pos));
+            world.add(bkg_id, std::move(bkg_size));
+            world.add(bkg_id, std::move(bkg_vis));
+            world.add(bkg_id, std::move(bkg_sprite));
+            world.add(bkg_id, std::move(z_order));
+        }
+    }
+
+
 
     return true;
 }

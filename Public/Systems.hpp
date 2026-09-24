@@ -201,10 +201,20 @@ inline bool Init_Systems(ecs::World& world) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to load test.rml");
     }
 
-    world.each<Sprite, Size, Position>([&](ecs::EntityID, Sprite& sprite, Size& size, Position &pos)
+    std::vector<ecs::EntityID> bkg_tiles_to_load;
+
+    world.each<Sprite, Size, Position>([&](ecs::EntityID id, Sprite& sprite, Size& size, Position &pos)
     {
-        FunctionsLib::LoadSprite(ctx.renderer, size, pos, sprite);
+        if (world.has<BackgroundTile>(id)) {
+           bkg_tiles_to_load.push_back(id);
+        } else {
+           FunctionsLib::LoadSprite(ctx.renderer, size, pos, sprite);
+        }
     },  ecs::World::Exclude<Template>{});
+
+    for (auto id : bkg_tiles_to_load) {
+        FunctionsLib::LoadBackgroundSprite(world, id, ctx.renderer);
+    }
 
     std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>> renderables_by_layer;
 

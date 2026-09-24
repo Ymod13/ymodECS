@@ -98,7 +98,7 @@ struct Sprite {
         void operator()(SDL_Surface* s) const { if (s) SDL_DestroySurface(s); }
     };
 
-    std::unique_ptr<SDL_Texture, SDLTextureDeleter> texture;
+    std::shared_ptr<SDL_Texture> texture;
     std::unique_ptr<SDL_Surface, SDLSurfaceDeleter> surface;
 
     std::vector<Collisions::LocalCircle> localColliderCluster;
@@ -123,6 +123,10 @@ struct Sprite {
         is_static_obstacle = in_sprite->is_static_obstacle;
         draw_debug_shapes = in_sprite->draw_debug_shapes;
     }
+};
+
+struct BackgroundTile {
+    UserInterface::TilingType tiling_type = UserInterface::TilingType::FILL;
 };
 
 
