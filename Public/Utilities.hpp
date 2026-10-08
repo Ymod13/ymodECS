@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <mutex>
 #include <pxr/base/gf/vec2f.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
@@ -76,15 +78,16 @@ namespace Utils {
         static void DrawRectangle(SDL_Renderer *renderer, const SDL_FRect &rect, Uint8 r=0, Uint8 g=255, Uint8 b=0, Uint8 a=255);
         static void DrawCirclesCluster(SDL_Renderer *renderer, const Sprite& obj, Uint8 r=0, Uint8 g=0, Uint8 b=255, Uint8 a=255);
 
-        static void DrawSprite(SDL_Renderer* renderer, const Sprite& sprite, const Name& name, const Visibility &visibility);
+        static void DrawSprite(SDL_Renderer* renderer, const Sprite& sprite, const Name* name);
+        static bool IsSpriteOnScreen(const Sprite& sprite);
 
         template<typename EnumType>
         static std::string EnumToString(EnumType value) {
             if constexpr (std::is_same_v<EnumType, env::BulletType>) {
                 if (value == env::PISTOL) return "PISTOL";
                 if (value == env::SHOTGUN) return "SHOTGUN";
-                if (value == env::ROCKET) return "SHOTGUN";
-                if (value == env::GRENADE) return "SHOTGUN";
+                if (value == env::ROCKET) return "ROCKET";
+                if (value == env::GRENADE) return "GRENADE";
             }
             else if constexpr (std::is_same_v<EnumType, Collisions::CollisionType>) {
                 if (value == Collisions::RADIUS) return "RADIUS";
@@ -100,11 +103,65 @@ namespace Utils {
                 if (value == UserInterface::FOREGROUND) return "FOREGROUND";
                 if (value == UserInterface::UI) return "UI";
             }
+            else if constexpr (std::is_same_v<EnumType, UserInterface::TilingType>) {
+                if (value == UserInterface::REPEAT) return "REPEAT";
+                if (value == UserInterface::FILL) return "FILL";
+                if (value == UserInterface::TILESET) return "TILESET";
+                if (value == UserInterface::SINGLE) return "SINGLE";
+            }
 
             return "NOT_RECOGNIZED";
         }
-
     };
+
+    struct FrameProfiler {
+        struct Entry { double total_ms = 0.0; int count = 0; };
+        std::map<std::string, Entry> entries;
+        std::mutex mutex;
+        Uint64 last_print = SDL_GetPerformanceCounter();
+
+        static FrameProfiler& Get() {
+            static FrameProfiler instance;   // una sola istanza per tutto il programma
+            return instance;
+        }
+
+        void Add(const char* name, Uint64 start) {
+            const double ms = (SDL_GetPerformanceCounter() - start) * 1000.0 / SDL_GetPerformanceFrequency();
+            std::lock_guard<std::mutex> lock(mutex);
+            auto& e = entries[name];
+            e.total_ms += ms;
+            ++e.count;
+        }
+
+        void PrintEverySecond() {
+            std::lock_guard<std::mutex> lock(mutex);
+            const double elapsed = (SDL_GetPerformanceCounter() - last_print) / (double)SDL_GetPerformanceFrequency();
+            if (elapsed < 1.0) return;
+            for (auto& [name, e] : entries)
+                std::cout << name << ": " << e.total_ms / e.count << " ms (x" << e.count << ")\n";
+            std::cout << "---- entries: " << entries.size() << "\n";
+            entries.clear();
+            last_print = SDL_GetPerformanceCounter();
+        }
+    };
+
+    struct ScopedTimer {
+        const char* name;
+        Uint64 start;
+        bool enabled;
+
+        explicit ScopedTimer(const char* n, bool en = true)
+            : name(n), start(en ? SDL_GetPerformanceCounter() : 0), enabled(en) {}
+
+        ~ScopedTimer() {
+            if (enabled) FrameProfiler::Get().Add(name, start);
+        }
+    };
+
+    #define PROFILE_CONCAT_(a, b) a##b
+    #define PROFILE_CONCAT(a, b)  PROFILE_CONCAT_(a, b)
+    #define PROFILE_SCOPE(name) \
+    Utils::ScopedTimer PROFILE_CONCAT(_prof_, __LINE__)(name, env::use_frame_profiler)
 }
 
 //void y_axis_movement();

@@ -544,6 +544,8 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
             break;
     }
 
+    out_sprite.texture_rect = out_sprite.scaled_rect;
+
     out_sprite.rect.x = out_sprite.scaled_rect.x= pos.pos.x;
     out_sprite.rect.y = out_sprite.scaled_rect.y = pos.pos.y;
 
@@ -588,7 +590,11 @@ bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &
     // copy key values to avoid sparse/set reallocation due to frequent changes
     const std::string name_str = name.name;
     const std::string sprite_filename = sprite.filename;
+    const auto tile_size = sprite.tile_size;
+    const auto grid_size = sprite.grid_size;
+    const auto is_tileset = sprite.is_tileset;
     const auto sprite_tiling_type = tile.tiling_type;
+    const auto tile_coords = tile.tile_coords;
     const auto texture_scale = size.scale;
 
     const std::string filename = env::sprites_folder + sprite_filename;
@@ -609,15 +615,23 @@ bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &
     float x_limit = env::map_size.x;
     float y_limit = env::map_size.y;
 
+    float tile_size_x = spriteTexture->w;
+    float tile_size_y = spriteTexture->h;
+
     switch (sprite_tiling_type) {
         case UserInterface::TilingType::FILL:
             x_limit = 1;
             y_limit = 1;
             break;
+
+        case UserInterface::TilingType::TILESET:
+            tile_size_x = tile_size.x;
+            tile_size_y = tile_size.y;
+            break;
     }
 
-    for (float i=0; i<=x_limit; i+= spriteTexture->w*texture_scale.x) {
-        for (float j=0; j<=y_limit; j+= spriteTexture->h*texture_scale.y) {
+    for (float i=0; i<=x_limit; i+= tile_size_x*texture_scale.x) {
+        for (float j=0; j<=y_limit; j+= tile_size_y*texture_scale.y) {
             ecs::EntityID bkg_id = world.create();
 
             Name bkg_name;
@@ -636,19 +650,41 @@ bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &
             bkg_vis.is_visible = true;
 
             bkg_sprite.texture = shared_texture;
-            if (sprite_tiling_type==UserInterface::TilingType::FILL) {
-                bkg_sprite.rect.w = env::map_size.x;
-                bkg_sprite.rect.h = env::map_size.y;
-                bkg_sprite.scaled_rect.w = env::map_size.x;
-                bkg_sprite.scaled_rect.h = env::map_size.y;
-            }
-            else {
-                bkg_sprite.rect.w = bkg_sprite.texture->w;
-                bkg_sprite.rect.h = bkg_sprite.texture->h;
-                bkg_sprite.scaled_rect.w = bkg_sprite.texture->w * bkg_size.scale.x;
-                bkg_sprite.scaled_rect.h = bkg_sprite.texture->h * bkg_size.scale.y;
-            }
 
+            switch (sprite_tiling_type) {
+                case  UserInterface::TilingType::FILL:
+                    bkg_sprite.rect.w = env::map_size.x;
+                    bkg_sprite.rect.h = env::map_size.y;
+                    bkg_sprite.scaled_rect.w = env::map_size.x;
+                    bkg_sprite.scaled_rect.h = env::map_size.y;
+                    bkg_sprite.texture_rect = bkg_sprite.scaled_rect;
+                    break;
+                case  UserInterface::TilingType::TILESET:
+                    // TODO: - ymod - tileset Handling
+                    bkg_sprite.rect.w = tile_size.x;
+                    bkg_sprite.rect.h = tile_size.y;
+                    bkg_sprite.scaled_rect.w = tile_size.x * bkg_size.scale.x;
+                    bkg_sprite.scaled_rect.h = tile_size.y * bkg_size.scale.y;
+
+                    bkg_sprite.texture_rect.w = tile_size.x;
+                    bkg_sprite.texture_rect.h = tile_size.y;
+                    bkg_sprite.texture_rect.x = tile_coords.x * tile_size.x;
+                    bkg_sprite.texture_rect.y = tile_coords.y * tile_size.y;
+
+                    bkg_sprite.is_tileset = true;
+                    bkg_sprite.tile_size = tile_size;
+                    bkg_sprite.grid_size = grid_size;
+
+                    break;
+                case  UserInterface::TilingType::REPEAT:
+                    bkg_sprite.rect.w = bkg_sprite.texture->w;
+                    bkg_sprite.rect.h = bkg_sprite.texture->h;
+                    bkg_sprite.scaled_rect.w = bkg_sprite.texture->w * bkg_size.scale.x;
+                    bkg_sprite.scaled_rect.h = bkg_sprite.texture->h * bkg_size.scale.y;
+                    bkg_sprite.texture_rect = bkg_sprite.scaled_rect;
+                    break;
+
+            }
 
             Position bkg_pos;
             bkg_pos.pos.x = i;
@@ -811,45 +847,85 @@ void FunctionsLib::DrawCirclesCluster(SDL_Renderer *renderer, const Sprite &obj,
 }
 // -------------------------------------------------------------------------------------------------------------
 
-void FunctionsLib::DrawSprite(SDL_Renderer *renderer, const Sprite &sprite, const Name &name, const Visibility &visibility) {
-
-    if (!visibility.is_visible) {
-        return;
-    }
+void FunctionsLib::DrawSprite(SDL_Renderer *renderer, const Sprite &sprite, const Name *name) {
 
     if (SDL_Texture *sprite_texture = sprite.texture.get()) {
 
-        //  a pointer to a point indicating the point around which dstrect will be rotated (if NULL, rotation will be done around dstrect.w/2, dstrect.h/2).
-        SDL_FPoint* rotation_center = NULL;
+        //  a pointer to a point indicating the point around which destrect will be rotated (if NULL, rotation will be done around dstrect.w/2, dstrect.h/2).
+        SDL_FPoint* rotation_center = nullptr;
+        const SDL_FRect* source_rect = nullptr;
 
-        // Draws the rotated texture on the GPU
-        if (SDL_RenderTextureRotated(renderer, sprite_texture, NULL, &sprite.scaled_rect, sprite.angle, rotation_center, SDL_FLIP_NONE)) {
-        //if (SDL_RenderTexture(ctx.renderer, SpriteTexture, nullptr, &sprite.scaled_rect)) {
-            if (env::is_text_debug) {
-                std::cout << "  ->Sprite rendered: " << name.name <<  " - pos: " << sprite.scaled_rect.x << "; " << sprite.scaled_rect.y <<
-                " - size: "<< sprite.scaled_rect.w << "; " << sprite.scaled_rect.h << "\n";
-            }
+        if (sprite.is_tileset)
+        {
+            source_rect = &sprite.texture_rect;
+        }
 
-            if (sprite.draw_debug_shapes) {
-                switch (sprite.collision_type) {
-                    case Collisions::RADIUS:
-                        FunctionsLib::DrawCircle(renderer, sprite.center, sprite.bounding_radius);
-                        break;
-                    case Collisions::RECTANGLE:
-                        FunctionsLib::DrawRectangle(renderer, sprite.scaled_rect);
-                        break;
-                    case Collisions::MULTI_CIRCLE:
-                        FunctionsLib::DrawCirclesCluster(renderer, sprite);
-                        break;
-                }
-            }
+        bool is_sprite_rendered;
+        if (sprite.angle ==0.0f) {
+            is_sprite_rendered = SDL_RenderTexture(renderer, sprite_texture, source_rect, &sprite.scaled_rect);
         }
         else {
+            is_sprite_rendered = SDL_RenderTextureRotated(renderer, sprite_texture, source_rect, &sprite.scaled_rect, sprite.angle, rotation_center, SDL_FLIP_NONE);
+        }
+
+        if (!is_sprite_rendered) {
             SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error rendering Texture: %s", SDL_GetError());
+            return;
+        }
+
+        if (sprite.draw_debug_shapes) {
+            switch (sprite.collision_type) {
+                case Collisions::RADIUS:
+                    FunctionsLib::DrawCircle(renderer, sprite.center, sprite.bounding_radius);
+                    break;
+                case Collisions::RECTANGLE:
+                    FunctionsLib::DrawRectangle(renderer, sprite.scaled_rect);
+                    break;
+                case Collisions::MULTI_CIRCLE:
+                    FunctionsLib::DrawCirclesCluster(renderer, sprite);
+                    break;
+            }
+        }
+
+        if (env::is_text_debug && name) {
+            std::cout << "  ->Sprite rendered: " << name->name <<  " - pos: " << sprite.scaled_rect.x << "; " << sprite.scaled_rect.y <<
+                " - size: "<< sprite.scaled_rect.w << "; " << sprite.scaled_rect.h << "\n";
         }
     }
     else {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER,"Error loading Texture: %s", sprite.filename.c_str());
     }
 }
+// -------------------------------------------------------------------------------------------------------------
+bool FunctionsLib::IsSpriteOnScreen(const Sprite &sprite)
+{
+    const SDL_FRect& r = sprite.scaled_rect;
+
+    // Caso comune: nessuna rotazione, basta un test AABB
+    /*
+    if (sprite.angle == 0.0f) {
+        return r.x < view.x + view.w && r.x + r.w > view.x &&
+               r.y < view.y + view.h && r.y + r.h > view.y;
+    }
+    */
+
+    if (sprite.angle == 0.0f) {
+        return r.x > -r.w  && r.x < env::screen_width &&
+               r.y > -r.h  && r.y < env::screen_height;
+    }
+
+    return false;
+
+    /*
+    // Sprite ruotato: la rotazione è attorno al centro del rect (rotation_center = NULL),
+    // quindi uso un cerchio di raggio pari a metà diagonale, che copre ogni angolo possibile
+    const float cx = r.x + r.w * 0.5f;
+    const float cy = r.y + r.h * 0.5f;
+    const float half_diag = 0.5f * std::sqrt(r.w * r.w + r.h * r.h);
+
+    return cx + half_diag > view.x && cx - half_diag < view.x + view.w &&
+           cy + half_diag > view.y && cy - half_diag < view.y + view.h;
+           */
+}
+
 // -------------------------------------------------------------------------------------------------------------

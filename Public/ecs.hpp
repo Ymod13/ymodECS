@@ -7,15 +7,19 @@
 
 #pragma once
 // ============================================================
-//  ECS — Entity Component System  (C++17, header-only)
+//  ECS — Entity Component System  (C++20, header-only)
 // ============================================================
 #include <algorithm>
 #include <any>
+#include <array>
 #include <bitset>
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <limits>
+#include <map>
 #include <memory>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
@@ -33,20 +37,9 @@ namespace ecs {
 using EntityID    = std::uint32_t;
 using ComponentID = std::uint8_t;
     /*
-    *  Signature it's a N bits array
-    *  The Signature is a bit mask representing which components are owned by an entity, or which components a system requires
-       Components:   Health Transform Velocity Sprite  ...
-       ID:              0       1        2       3
-
-       Entity A:     [  1       1        0       0  ]  → has Health and Transform
-       Entity B:     [  0       1        1       1  ]  → has Transform, Velocity, Sprite
-
-       rendering system requires: [  0   1   0   1  ]  → Transform + Sprite
-
-       Entity A & System: [ 0  1  0  0 ] ≠ System  → NOT processed
-       Entity B & System: [ 0  1  0  1 ] == System → processed
-
-       */
+     *  Signature is a N-bit mask: which components an entity owns,
+     *  or which components a query requires/excludes.
+     */
 using Signature   = std::bitset<MAX_COMPONENTS>;
 
 static constexpr EntityID NULL_ENTITY = 0;
@@ -58,7 +51,8 @@ struct RenderableEntry {
 };
 
 // ─── Component registry ──────────────────────────────────────
-// Assigns a unique integer ID to each component type at runtime.
+// Assigns a unique small integer ID to each component type at runtime.
+// The ID is also the index of the type's pool inside World::pools_.
 class ComponentRegistry {
 public:
     template<typename T>
@@ -71,59 +65,77 @@ private:
     inline static ComponentID next_id = 0;
 };
 
-// ─── Sparse-set component store ──────────────────────────────
-// Maps EntityID → component value in a cache-friendly dense array.
-// Iteration over all components is O(n) with good locality.
-template<typename T>
-class ComponentPool {
+// ─── Type-erased pool interface ──────────────────────────────
+// Lets World::destroy() clean up every pool without knowing T
+// (replaces the old erasers_ map of std::function).
+class IComponentPool {
 public:
+    virtual ~IComponentPool() = default;
+    virtual void remove(EntityID e) = 0;
+};
+
+// ─── Sparse-set component store ──────────────────────────────
+// sparse_ : EntityID -> index in the dense arrays (plain vector, O(1), no hashing)
+// dense_* : tightly packed entities / components, cache-friendly iteration
+//
+// Note: sparse_ grows up to (highest EntityID that ever got this component + 1) * 4 bytes.
+template<typename T>
+class ComponentPool final : public IComponentPool {
+public:
+    static constexpr std::uint32_t NPOS = std::numeric_limits<std::uint32_t>::max();
+
     void insert(EntityID e, T component) {
-        assert(SparseAllComponents.find(e) == SparseAllComponents.end() && "Entity already has this component");
-        SparseAllComponents[e] = static_cast<uint32_t>(DenseAllComponents.size());
-        DenseAllEntities.push_back(e);
-        DenseAllComponents.push_back(std::move(component));
+        if (e >= sparse_.size())
+            sparse_.resize(static_cast<std::size_t>(e) + 1, NPOS);
+        assert(sparse_[e] == NPOS && "Entity already has this component");
+        sparse_[e] = static_cast<std::uint32_t>(dense_components_.size());
+        dense_entities_.push_back(e);
+        dense_components_.push_back(std::move(component));
     }
 
-    void remove(EntityID e) {
-        auto it = SparseAllComponents.find(e);
-        if (it == SparseAllComponents.end()) return;
-        uint32_t idx = it->second;
-        uint32_t last = static_cast<uint32_t>(DenseAllComponents.size()) - 1;
+    void remove(EntityID e) override {
+        if (!has(e)) return;
+        const std::uint32_t idx  = sparse_[e];
+        const std::uint32_t last = static_cast<std::uint32_t>(dense_components_.size()) - 1;
         if (idx != last) {
-            DenseAllComponents[idx] = std::move(DenseAllComponents[last]);
-            DenseAllEntities[idx] = DenseAllEntities[last];
-            SparseAllComponents[DenseAllEntities[idx]] = idx;
+            dense_components_[idx] = std::move(dense_components_[last]);
+            dense_entities_[idx]   = dense_entities_[last];
+            sparse_[dense_entities_[idx]] = idx;
         }
-        DenseAllComponents.pop_back();
-        DenseAllEntities.pop_back();
-        SparseAllComponents.erase(it);
+        dense_components_.pop_back();
+        dense_entities_.pop_back();
+        sparse_[e] = NPOS;
     }
 
+    // Caller must be sure the entity has the component (asserted in Debug).
     T& get(EntityID e) {
-        return DenseAllComponents[SparseAllComponents.at(e)];
+        assert(has(e) && "Entity does not have this component");
+        return dense_components_[sparse_[e]];
+    }
+
+    // Safe variant: nullptr when the entity does not have the component.
+    T* try_get(EntityID e) {
+        return has(e) ? &dense_components_[sparse_[e]] : nullptr;
     }
 
     bool has(EntityID e) const {
-        return SparseAllComponents.contains(e);
+        return e < sparse_.size() && sparse_[e] != NPOS;
     }
 
-    // Iterate over all components (great for systems)
-    const std::vector<EntityID>& entities() const { return DenseAllEntities; }
-    std::vector<T>& components() { return DenseAllComponents; }
+    const std::vector<EntityID>& entities() const { return dense_entities_; }
+    std::vector<T>& components() { return dense_components_; }
+    std::size_t size() const { return dense_entities_.size(); }
 
 private:
-    // EntityID -> index of the component in DenseAllComponents
-    std::unordered_map<EntityID, uint32_t> SparseAllComponents;
-    // All entities
-    std::vector<EntityID>                  DenseAllEntities;
-    // All components
-    std::vector<T>                         DenseAllComponents;
+    std::vector<std::uint32_t> sparse_;            // EntityID -> dense index (or NPOS)
+    std::vector<EntityID>      dense_entities_;    // dense index -> EntityID
+    std::vector<T>             dense_components_;  // dense index -> component
 };
 
 
 
 // ─── World ───────────────────────────────────────────────────
-// The central registry: creates entities, stores components, runs systems.
+// The central registry: creates entities, stores components, runs queries.
 class World {
 public:
     // Resources
@@ -149,13 +161,19 @@ public:
 
     // ── Entity management ────────────────────────────────────
     EntityID create() {
-        EntityID id = ++next_entity_;
-        signatures_[id] = {};
-        alive_.push_back(id);
+        const EntityID id = ++next_entity_;
+        if (id >= signatures_.size()) {
+            signatures_.resize(static_cast<std::size_t>(id) + 1);
+            alive_flags_.resize(static_cast<std::size_t>(id) + 1, 0);
+        }
+        signatures_[id].reset();
+        alive_flags_[id] = 1;
+        ++alive_count_;
         return id;
     }
 
     void destroy(EntityID e) {
+        if (!alive(e)) return;
 
         if (has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
             auto& renderables_by_layer = get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
@@ -171,40 +189,49 @@ public:
             }
         }
 
-        for (auto& [tid, eraser] : erasers_) {
-            eraser(e);  // remove all components
+        for (auto& pool : pools_) {
+            if (pool) pool->remove(e);   // remove all components
         }
-        signatures_.erase(e);
-        alive_.erase(std::remove(alive_.begin(), alive_.end(), e), alive_.end());
+        signatures_[e].reset();
+        alive_flags_[e] = 0;
+        --alive_count_;
     }
 
     bool alive(EntityID e) const {
-        return signatures_.count(e) > 0;
+        return e < alive_flags_.size() && alive_flags_[e] != 0;
     }
 
     // ── Component management ─────────────────────────────────
     template<typename T>
     void add(EntityID e, T component) {
+        assert(alive(e) && "add() on an entity that is not alive");
         GetPool<T>().insert(e, std::move(component));
         signatures_[e].set(ComponentRegistry::GetId<T>());
     }
 
     template<typename T>
     void remove(EntityID e) {
+        assert(alive(e) && "remove() on an entity that is not alive");
         GetPool<T>().remove(e);
         signatures_[e].reset(ComponentRegistry::GetId<T>());
     }
 
+    // Fast path: the entity MUST have T (asserted in Debug).
     template<typename T>
     T& get(EntityID e) {
         return GetPool<T>().get(e);
     }
 
+    // Safe path: nullptr when the entity does not have T.
+    template<typename T>
+    T* try_get(EntityID e) {
+        return GetPool<T>().try_get(e);
+    }
+
     template<typename T>
     bool has(EntityID e) const {
-        auto it = signatures_.find(e);
-        if (it == signatures_.end()) return false;
-        return it->second.test(ComponentRegistry::GetId<T>());
+        if (e >= signatures_.size()) return false;
+        return signatures_[e].test(ComponentRegistry::GetId<T>());
     }
 
     // Returns the signature (component bitmask) of an entity
@@ -212,28 +239,19 @@ public:
         return signatures_.at(e);
     }
 
-    // ── Query helpers ─────────────────────────────────────────
-    // Returns all entities that have ALL of the listed component types.
-    template<typename... Ts>
-    std::vector<EntityID> query() {
-        Signature required;
-        (required.set(ComponentRegistry::GetId<Ts>()), ...);
-
-        std::vector<EntityID> result;
-        for (EntityID e : alive_) {
-            if ((signatures_[e] & required) == required) {
-                result.push_back(e);
-            }
-        }
-        return result;
-    }
-
     template<typename... Ts>
     struct Exclude {};
 
-    // Iterate over entities with a given component set, calling a function. With optional exclusion list
+    // Iterate over entities with a given component set, calling a function. With optional exclusion list.
+    // Cost is proportional to the SMALLEST pool among the included components, not to the total
+    // number of entities in the world.
+    //
+    // Rules while iterating: do not destroy entities or remove components of the iterated types
+    // from inside the callback (collect them and do it afterwards).
     template<typename... Includes, typename... Excludes, typename Fn>
     void each(Fn&& fn, Exclude<Excludes...> = {}) {
+        static_assert(sizeof...(Includes) > 0, "each<>() needs at least one component type");
+
         // Included components signatures
         Signature required;
         (required.set(ComponentRegistry::GetId<Includes>()), ...);
@@ -243,7 +261,13 @@ public:
         if constexpr (sizeof...(Excludes) > 0)
             (excluded.set(ComponentRegistry::GetId<Excludes>()), ...);
 
-        for (EntityID e : alive_) {
+        // Pick the smallest pool to drive the iteration
+        const std::vector<EntityID>* driver = nullptr;
+        ((driver = PickSmaller(driver, GetPool<Includes>().entities())), ...);
+
+        // Index-based: stays valid even if the callback adds components (vector growth)
+        for (std::size_t i = 0; i < driver->size(); ++i) {
+            const EntityID e = (*driver)[i];
             const Signature& sig = signatures_[e];
 
             // MUST have all required components
@@ -261,54 +285,49 @@ public:
         }
     }
 
-    // Counts all the added entities
-    std::size_t entity_count() const { return alive_.size(); }
+    // Returns all entities that have ALL of the listed component types.
+    // (order follows the smallest pool, not creation order)
+    template<typename... Ts>
+    std::vector<EntityID> query() {
+        std::vector<EntityID> result;
+        each<Ts...>([&](EntityID e, Ts&...) { result.push_back(e); });
+        return result;
+    }
 
-    // Counts entities with all listed components a no EXCLUDES
+    // Counts all the alive entities
+    std::size_t entity_count() const { return alive_count_; }
+
+    // Counts entities with all listed components and no EXCLUDES
     template<typename... Includes, typename... Excludes>
     std::size_t count(Exclude<Excludes...> = {}) {
-        Signature required;
-        (required.set(ComponentRegistry::GetId<Includes>()), ...);
-
-        Signature excluded;
-        if constexpr (sizeof...(Excludes) > 0)
-            (excluded.set(ComponentRegistry::GetId<Excludes>()), ...);
-
         std::size_t result = 0;
-        for (EntityID e : alive_) {
-            const Signature& sig = signatures_.at(e);
-
-            if ((sig & required) != required) continue;
-
-            if constexpr (sizeof...(Excludes) > 0)
-                if ((sig & excluded).any()) continue;
-
-            ++result;
-        }
+        each<Includes...>([&](EntityID, Includes&...) { ++result; }, Exclude<Excludes...>{});
         return result;
     }
 
 private:
+    // One slot per ComponentID: direct array access, no hashing, no shared_ptr refcount.
     template<typename T>
     ComponentPool<T>& GetPool() {
-        auto tid = std::type_index(typeid(T));
-        if (!pools_.contains(tid)) {
-            pools_[tid] = std::make_shared<ComponentPool<T>>();
+        auto& slot = pools_[ComponentRegistry::GetId<T>()];
+        if (!slot) slot = std::make_unique<ComponentPool<T>>();
+        return static_cast<ComponentPool<T>&>(*slot);
+    }
 
-            // Register an eraser so destroy() can clean up without knowing T
-            erasers_[tid] = [this](EntityID e) {
-                GetPool<T>().remove(e);
-            };
-        }
-        return *std::static_pointer_cast<ComponentPool<T>>(pools_.at(tid));
+    static const std::vector<EntityID>* PickSmaller(const std::vector<EntityID>* a,
+                                                    const std::vector<EntityID>& b) {
+        return (!a || b.size() < a->size()) ? &b : a;
     }
 
     EntityID resource_entity_ = NULL_ENTITY;
     EntityID next_entity_ = NULL_ENTITY;
-    std::vector<EntityID> alive_;
-    std::unordered_map<EntityID, Signature> signatures_;
-    std::unordered_map<std::type_index, std::shared_ptr<void>> pools_;
-    std::unordered_map<std::type_index, std::function<void(EntityID)>> erasers_;
+    std::size_t alive_count_ = 0;
+
+    // Indexed by EntityID (IDs are sequential and never reused)
+    std::vector<Signature>     signatures_;
+    std::vector<std::uint8_t>  alive_flags_;
+
+    std::array<std::unique_ptr<IComponentPool>, MAX_COMPONENTS> pools_;
 };
 
 } // namespace ecs

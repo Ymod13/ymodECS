@@ -43,6 +43,7 @@ namespace env
     inline bool display_stats = true;
     inline float stats_display_interval = 0.5f;
     inline bool show_imgui = false;
+    inline bool use_frame_profiler = false;
 
     inline Vector2D player_pos;
     inline Vector2D player_screen_pos;
@@ -187,6 +188,7 @@ namespace UserInterface {
     enum TilingType {
         REPEAT,
         FILL,
+        TILESET,
         SINGLE
     };
 }

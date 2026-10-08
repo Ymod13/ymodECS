@@ -87,10 +87,11 @@ public:
                         component.*(field.member) = coll_type;
                     }
                     else if constexpr (std::is_same_v<typename Fields::Type, UserInterface::TilingType> &&  std::is_same_v<ValueType, std::string>) {
-                        UserInterface::TilingType tiling_type = UserInterface::TilingType::REPEAT;
+                        UserInterface::TilingType tiling_type = UserInterface::TilingType::SINGLE;
 
                         if      (field.value == "FILL")   tiling_type = UserInterface::TilingType::FILL;
-                        else if (field.value == "SINGLE") tiling_type = UserInterface::TilingType::SINGLE;
+                        else if (field.value == "TILESET") tiling_type = UserInterface::TilingType::TILESET;
+                        else if (field.value == "REPEAT") tiling_type = UserInterface::TilingType::REPEAT;
 
                         component.*(field.member) = tiling_type;
                     }

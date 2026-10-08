@@ -289,6 +289,8 @@ inline bool Quit_Systems(ecs::World& world) {
 
 inline void Handle_Input(ecs::World& world, float dt) {
 
+    PROFILE_SCOPE("Handle input");
+
     auto& input = world.get_resource<env::InputState>();
     auto& stats = world.get_resource<env::Stats>();
     auto& rmlCtx = world.get_resource<env::RmlUIContext>();
@@ -494,6 +496,8 @@ inline void Handle_Input(ecs::World& world, float dt) {
 // entities movements routines
 inline void Update_Player_Movement(ecs::World& world, float dt)
 {
+    PROFILE_SCOPE("Update player movement");
+
     auto& input = world.get_resource<env::InputState>();
 
     world.each<Player, Position, Velocity, Sprite, Size>([input, dt](ecs::EntityID, Player& player, Position& pos, Velocity& vel, Sprite &sprite, Size &size)
@@ -518,6 +522,8 @@ inline void Update_Player_Movement(ecs::World& world, float dt)
 
 inline void Update_Enemies_Movement(ecs::World& world, float dt)
 {
+    PROFILE_SCOPE("Update enemies movements");
+
     world.each<Enemy, Position, Velocity, Sprite, Size, Visibility>([dt](ecs::EntityID, Enemy& en, Position& pos, Velocity& vel,Sprite &sprite, Size &size, Visibility &visibility)
     {
         if (visibility.is_visible) {
@@ -530,6 +536,8 @@ inline void Update_Enemies_Movement(ecs::World& world, float dt)
 
 inline void Update_Bullets_Movement(ecs::World& world, float dt)
 {
+    PROFILE_SCOPE("Update bullets movements");
+
     std::vector<ecs::EntityID> to_destroy;
 
     world.each<Bullet, Position, Velocity, Sprite, Size, Visibility>([dt, &to_destroy](ecs::EntityID id, Bullet& bullet, Position& pos, Velocity& vel,Sprite &sprite, Size &size, Visibility &visibility)
@@ -554,6 +562,8 @@ inline void Update_Bullets_Movement(ecs::World& world, float dt)
 //------------------------------------------------------------------------------------------------------------------------
 
 inline void Collision_detection(ecs::World& world, float dt) {
+
+    PROFILE_SCOPE("Collision detection");
 
     struct EntityData {
         ecs::EntityID id = ecs::NULL_ENTITY;
@@ -704,7 +714,9 @@ inline void Collision_detection(ecs::World& world, float dt) {
 }
 //------------------------------------------------------------------------------------------------------------------------
 
-inline void World_Map_Update(ecs::World& world, float dt) {
+inline void World_Map_Update(ecs::World& world, float dt)
+{
+    PROFILE_SCOPE("World map update");
 
     if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
         auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
@@ -742,27 +754,51 @@ inline void World_Map_Update(ecs::World& world, float dt) {
                 dt
             );
 
+        // Vista della camera in coordinate mondo, con margine di sicurezza
+        constexpr float kCullMargin = 256.0f;   // deve essere > dello spostamento massimo della camera in un frame
+        const float view_l = camera.current_pos.x - kCullMargin;
+        const float view_t = camera.current_pos.y - kCullMargin;
+        const float view_r = camera.current_pos.x + env::screen_width  + kCullMargin;
+        const float view_b = camera.current_pos.y + env::screen_height + kCullMargin;
+
+        size_t drawn = 0, culled = 0;
+
         for (auto& [layer, renderable_entries] : renderables_by_layer) {
             if (layer == UserInterface::LayerType::UI) {
                 continue;
             }
+
+            const bool is_static_layer = (layer == UserInterface::LayerType::BACKGROUND || layer == UserInterface::LayerType::WORLD_STATIC);
+
             for (auto& r : renderable_entries) {
 
-                auto& visibility = world.get<Visibility>(r.entity);
+                if (!world.get<Visibility>(r.entity).is_visible) continue;
 
-                if (visibility.is_visible) {
-                    auto &sprite = world.get<Sprite>(r.entity);
-                    auto &pos = world.get<Position>(r.entity);
-                    auto &size = world.get<Size>(r.entity);
+                auto &sprite = world.get<Sprite>(r.entity);
+                auto &pos = world.get<Position>(r.entity);
 
-                    FunctionsLib::UpdateScreenPosition(pos.pos - camera.current_pos, pos, sprite, size.scale);
-
-                    if (world.has<Player>(r.entity)) {
-                        env::player_screen_pos = pos.screen_pos;
-                    }
+                if (is_static_layer) {
+                    const float w = sprite.scaled_rect.w;
+                    const float h = sprite.scaled_rect.h;
+                    if (pos.pos.x + w < view_l || pos.pos.x > view_r ||
+                        pos.pos.y + h < view_t || pos.pos.y > view_b) {
+                            ++culled;
+                            continue;   // out of the view, no need to update screen position
+                        }
                 }
+
+                auto &size = world.get<Size>(r.entity);
+                FunctionsLib::UpdateScreenPosition(pos.pos - camera.current_pos, pos, sprite, size.scale);
+
+                if (!is_static_layer && world.has<Player>(r.entity)) {
+                    env::player_screen_pos = pos.screen_pos;
+                }
+
+                ++drawn;
+
             }
         }
+        //std::cout << "Sprites updated:: " << drawn << " - culled: " << culled << std::endl;
     }
     else
     {
@@ -774,6 +810,8 @@ inline void World_Map_Update(ecs::World& world, float dt) {
 
 inline void Render_Scene(ecs::World& world, float dt)
 {
+    PROFILE_SCOPE("Render scene");
+
     auto& ctx = world.get_resource<env::SDLContext>();
     auto& stats = world.get_resource<env::Stats>();
     auto &ecsInspector = world.get_resource<EcsInspector>();
@@ -803,47 +841,83 @@ inline void Render_Scene(ecs::World& world, float dt)
         was_showing_cursor = env::show_imgui;
     }
 
-    // --- RmlUi: update layout/state before rendering ---
-    rmlCtx.context->Update();
+    {
+        PROFILE_SCOPE("     rml update");
+        // --- RmlUi: update layout/state before rendering ---
+        rmlCtx.context->Update();
+    }
 
     SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
     SDL_RenderClear(ctx.renderer);
 
-    if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
-        auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
 
-        for (auto& [layer, renderable_entries] : renderables_by_layer) {
-            if (layer==UserInterface::LayerType::WORLD_DYNAMIC) {
-                FunctionsLib::DynamicZOrdering(world, renderable_entries, false);
-            }
+    {
+        PROFILE_SCOPE("     sprites");
 
-            for (auto& r : renderable_entries) {
-                auto& sprite = world.get<Sprite>(r.entity);
-                auto& name = world.get<Name>(r.entity);
-                auto& visibility = world.get<Visibility>(r.entity);
-                auto& pos = world.get<Position>(r.entity);
+        size_t drawn = 0, culled = 0;
 
-                FunctionsLib::DrawSprite(ctx.renderer, sprite, name, visibility);
+        if (world.has_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>()) {
+            auto& renderables_by_layer = world.get_resource<std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>>();
+
+            for (auto& [layer, renderable_entries] : renderables_by_layer) {
+                if (layer==UserInterface::LayerType::WORLD_DYNAMIC) {
+                    FunctionsLib::DynamicZOrdering(world, renderable_entries, false);
+                }
+
+                for (auto& r : renderable_entries) {
+                    if (!world.get<Visibility>(r.entity).is_visible) {
+                        continue;
+                    }
+
+                    auto& sprite = world.get<Sprite>(r.entity);
+                    if (!FunctionsLib::IsSpriteOnScreen(sprite)) {
+                        ++culled;
+                        continue;
+                    }
+
+                    const Name* name = env::is_text_debug ? &world.get<Name>(r.entity) : nullptr;
+
+                    FunctionsLib::DrawSprite(ctx.renderer, sprite, name);
+                    ++drawn;
+                }
             }
         }
+        else
+        {
+            std::cerr << "Layer resource found, cannot render sprites" << std::endl;
+            return;
+        }
+
+        //std::cout << "Sprites drawn: " << drawn << " - culled: " << culled << std::endl;
     }
-    else
+
     {
-        std::cerr << "Layer resource found, cannot render sprites" << std::endl;
-        return;
+        PROFILE_SCOPE("     stats");
+        stats.UpdateStats(ctx.renderer, dt);
     }
 
-    stats.UpdateStats(ctx.renderer, dt);
+    {
+        PROFILE_SCOPE("     rml render");
+        // --- RmlUi: draw HUD over the scene, under ImGui ---
+        rmlCtx.context->Render();
+    }
 
-    // --- RmlUi: draw HUD over the scene, under ImGui ---
-    rmlCtx.context->Render();
 
-    ImGui::Render();
+    {
+        PROFILE_SCOPE("     imgui");
+        ImGui::Render();
+        // --- ImGui: draw on top of the already rendered scene
+        ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ctx.renderer);
+    }
 
-    // --- ImGui: draw on top of the already rendered scene
-    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), ctx.renderer);
+    {
+        PROFILE_SCOPE("     present");
+        SDL_RenderPresent(ctx.renderer);
+    }
 
-    SDL_RenderPresent(ctx.renderer);
+    if (env::use_frame_profiler) {
+        Utils::FrameProfiler::Get().PrintEverySecond();
+    }
 }
 
 #endif //YMODECS_FRAMEWORK_HPP

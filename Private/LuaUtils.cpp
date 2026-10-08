@@ -79,6 +79,7 @@ void LuaUtils::LoadLuaConfig(lua_State* in_lua_state) {
     GetLuaVariable<bool>(in_lua_state, "is_text_debug", env::is_text_debug);
     GetLuaVariable<bool>(in_lua_state, "is_input_text_debug", env::is_input_text_debug);
     GetLuaVariable<bool>(in_lua_state, "display_stats", env::display_stats);
+    GetLuaVariable<bool>(in_lua_state, "use_frame_profiler", env::use_frame_profiler);
     GetLuaVariable<float>(in_lua_state, "stats_display_interval", env::stats_display_interval);
 
     // WINDOW

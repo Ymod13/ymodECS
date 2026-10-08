@@ -31,12 +31,16 @@ def "Scene" {
 
 		def "Sprite"
 		{
-			string filename = "grass_1_512x512.png"
+			string filename = "TS/Terrain/Tileset/Tilemap_color1.png"
+			bool is_tileset = true
+			float2 tile_size = (64.0, 64.0)
+			float2 grid_size = (9.0, 6.0)
 		}
 		
 		def "BackgroundTile"
 		{
-			string tiling_type = "REPEAT"
+			string tiling_type = "TILESET"
+			float2 tile_coords = (1.0, 1.0)
 		}
 		
 		def "ZOrder"

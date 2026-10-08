@@ -74,35 +74,20 @@ struct Visibility {
 };
 
 struct Sprite {
-    std::string filename;
-    SDL_FRect rect;
-    SDL_FRect scaled_rect;
-    Vector2D center;
-    float pivot_y = 0.0f; // 0.0 = top, 0.5 = center, 1.0 = bottom/feet
-    float angle=0.0f;
 
-    // Collisions
-    float bounding_radius;
+    // USD readable data
+    std::string filename;
     Collisions::CollisionType collision_type = Collisions::NONE;
     bool overlaps_only = false;
     bool can_push = false;
     bool is_static_obstacle = false;
-    std::vector<ecs::EntityID> possible_collision_entities;
     bool draw_debug_shapes = false;
+    float pivot_y = 0.0f; // 0.0 = top, 0.5 = center, 1.0 = bottom/feet
+    bool is_tileset = false;
+    Vector2D tile_size;
+    Vector2D grid_size;
 
-    // Custom deleters per SDL
-    struct SDLTextureDeleter {
-        void operator()(SDL_Texture* t) const { if (t) SDL_DestroyTexture(t); }
-    };
-    struct SDLSurfaceDeleter {
-        void operator()(SDL_Surface* s) const { if (s) SDL_DestroySurface(s); }
-    };
-
-    std::shared_ptr<SDL_Texture> texture;
-    std::unique_ptr<SDL_Surface, SDLSurfaceDeleter> surface;
-
-    std::vector<Collisions::LocalCircle> localColliderCluster;
-
+    // Functions
     Sprite() {}
 
     Sprite( std::string inFilename) : filename(inFilename) {
@@ -113,6 +98,29 @@ struct Sprite {
 
     }
 
+    // Custom deleters per SDL
+    struct SDLTextureDeleter {
+        void operator()(SDL_Texture* t) const { if (t) SDL_DestroyTexture(t); }
+    };
+    struct SDLSurfaceDeleter {
+        void operator()(SDL_Surface* s) const { if (s) SDL_DestroySurface(s); }
+    };
+
+    // SDL data
+    std::shared_ptr<SDL_Texture> texture;
+    std::unique_ptr<SDL_Surface, SDLSurfaceDeleter> surface;
+    SDL_FRect texture_rect;
+    SDL_FRect rect;
+    SDL_FRect scaled_rect;
+    Vector2D center;
+    float angle=0.0f;
+
+    // Collisions
+    float bounding_radius;
+    std::vector<ecs::EntityID> possible_collision_entities;
+    std::vector<Collisions::LocalCircle> localColliderCluster;
+
+    // Utilities
     void CopyData(const Sprite *in_sprite) {
         if (in_sprite == nullptr) return;
 
@@ -122,11 +130,16 @@ struct Sprite {
         can_push = in_sprite->can_push;
         is_static_obstacle = in_sprite->is_static_obstacle;
         draw_debug_shapes = in_sprite->draw_debug_shapes;
+        pivot_y = in_sprite->pivot_y;
+        is_tileset = in_sprite->is_tileset;
+        tile_size = in_sprite->tile_size;
+        grid_size = in_sprite->grid_size;
     }
 };
 
 struct BackgroundTile {
     UserInterface::TilingType tiling_type = UserInterface::TilingType::FILL;
+    Vector2D tile_coords;
 };
 
 

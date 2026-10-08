@@ -23,6 +23,7 @@ is_text_debug = false;
 is_input_text_debug = false;
 display_stats = true;
 stats_display_interval = 0.5;
+use_frame_profiler = false;
 
 -- COLLISIONS
 cell_size = 32;
