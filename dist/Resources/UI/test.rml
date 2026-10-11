@@ -8,10 +8,10 @@
 		ymodECS
 		<br/>
     
-		<button id="start" onclick="console.log('start premuto')">Start</button>
+		<button id="start" onclick="console.log('Start button pressed')">Start</button>
 		<br/>
 		<br/>
-		<div id="game_status">pronto</div>
+		<div id="game_status">Ready</div>
 	
 	</div>
     
