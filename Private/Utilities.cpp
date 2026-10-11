@@ -560,6 +560,8 @@ bool FunctionsLib::LoadSprite(SDL_Renderer* renderer, const Size& size, const Po
 
 bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &id, SDL_Renderer *renderer) {
 
+    // TODO: review this according to tile map manager
+
     if (!world.has<Size>(id)) {
         std::cerr << "Error: Entity " << id << " does not have a Size component." << std::endl;
         return false;
@@ -630,8 +632,8 @@ bool FunctionsLib::LoadBackgroundSprite(ecs::World &world, const ecs::EntityID &
             break;
     }
 
-    for (float i=0; i<=x_limit; i+= tile_size_x*texture_scale.x) {
-        for (float j=0; j<=y_limit; j+= tile_size_y*texture_scale.y) {
+    for (float i=0; i<x_limit; i+= tile_size_x*texture_scale.x) {
+        for (float j=0; j<y_limit; j+= tile_size_y*texture_scale.y) {
             ecs::EntityID bkg_id = world.create();
 
             Name bkg_name;

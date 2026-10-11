@@ -15,6 +15,7 @@
 #include "RmlSystemInterface.hpp"
 #include "RmlUi/Core/Context.h"
 
+class JsRuntime;
 using namespace MathUtils;
 namespace ecs {
     using EntityID    = std::uint32_t;
@@ -123,6 +124,10 @@ namespace env
         Rml::Context* context = nullptr;
         RmlRenderInterface* renderInterface = nullptr;
         RmlSystemInterface* systemInterface = nullptr;
+    };
+
+    struct JsRmlContext {
+          std::unique_ptr<JsRuntime> js;
     };
 
     struct InputState {

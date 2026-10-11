@@ -1,9 +1,19 @@
 <!-- test.rml -->
 <rml>
 <head>
-    <link type="text/rcss" href="test.rcss"/>
+    <link type="text/rcss" href="style.rcss"/>
 </head>
 <body>
-    <div class="content">ymodECS</div>
+    <div class="content">
+		ymodECS
+		<br/>
+    
+		<button id="start" onclick="console.log('start premuto')">Start</button>
+		<br/>
+		<br/>
+		<div id="game_status">pronto</div>
+	
+	</div>
+    
 </body>
 </rml>

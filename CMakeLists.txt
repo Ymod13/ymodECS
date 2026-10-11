@@ -32,6 +32,7 @@ find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
 find_package(freetype CONFIG REQUIRED)
 find_package(pxr REQUIRED)
+find_package(qjs CONFIG REQUIRED)
 
 # --- RmlUi ---
 set(RMLUI_SAMPLES OFF CACHE BOOL "" FORCE)
@@ -80,7 +81,11 @@ add_executable(ymodECS main.cpp
         Public/EcsInspector.hpp
         Public/RmlSystemInterface.hpp
         Public/RmlRenderInterface.hpp
-        Public/RmlInputBridge.hpp)
+        Public/RmlInputBridge.hpp
+        Public/TileMapManager.hpp
+        Private/TileMapManager.cpp
+        Public/JsRml.h
+        Private/JsRml.cpp)
 
 target_include_directories(ymodECS SYSTEM PRIVATE
         ${PXR_INCLUDE_DIRS}
@@ -118,6 +123,7 @@ target_link_libraries(ymodECS PRIVATE
         imgui
         rmlui_core
         $<$<CONFIG:Debug>:rmlui_debugger>   # <-- links RmlDebugger only in Debug
+        qjs
 )
 
 if(WIN32)

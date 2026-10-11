@@ -15,9 +15,11 @@
 #include "LuaUtils.hpp"
 #include "Scheduler.hpp"
 #include "UsdWrapper.hpp"
+#include "TileMapManager.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_sdlrenderer3.h"
+#include "JsRml.h"
 #include "RmlInputBridge.hpp"
 #include "RmlUi/Core/Core.h"
 #include "RmlUi/Core/ElementDocument.h"
@@ -138,6 +140,13 @@ inline bool Init_Systems(ecs::World& world) {
         return false;
     }
 
+    // JsRml Init
+    //-----------
+    std::unique_ptr<JsRuntime> js = std::make_unique<JsRuntime>();
+    JsRuntime* jsRaw = js.get();
+
+    JsRml::Register(jsRaw->ctx, rmlContext);
+
 #ifdef YMODECS_RMLUI_DEBUGGER
     Rml::Debugger::Initialise(rmlContext);
 #endif
@@ -151,6 +160,7 @@ inline bool Init_Systems(ecs::World& world) {
     // World resources
     world.add_resource(env::SDLContext{window, renderer});
     world.add_resource(env::RmlUIContext{rmlContext, rmlRenderInterface, rmlSystemInterface});
+    world.add_resource(env::JsRmlContext{std::move(js)});
     world.add_resource(env::InputState{});
     world.add_resource(env::Stats{});
     world.add_resource(env::Camera{});
@@ -192,21 +202,40 @@ inline bool Init_Systems(ecs::World& world) {
     UsdWrapper::LoadUsdFile("Scenes/Scene1.usda", world);
     UsdWrapper::LoadUsdFile("Scenes/SceneUI.usda", world);
 
+    // Load Tile map
+    //--------------
+    TileMapUtils::TileMapData MapData;
+    if (TileMapUtils::LoadAsciiMap("Scripts/TileMapTest.txt", 9, MapData)) {
+        // TODO: review this according to tile map manager and map size. define in usd file tilest + ascii map associion
+        TileMapUtils::SpawnTileMap(world, renderer, "TS/Terrain/Tileset/Tilemap_color1.png", MapData, 64.f, {2.f, 2.f});
+        world.add_resource(std::move(MapData));
+    } else {
+        SDL_Log("Init_Systems (TileMap): Impossible to load Tile Map File");
+    }
+
+
     // Load RmlUi UI Assets
     //----------------------
     Rml::ElementDocument* testDocument = rmlContext->LoadDocument("Resources/UI/test.rml");
     if (testDocument) {
         testDocument->Show();
+        JsRml::RunFile(jsRaw->ctx, "Scripts/Test.js");
     } else {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to load test.rml");
     }
+
+    // Load JsRml Assets
+    //------------------
+
+
 
     std::vector<ecs::EntityID> bkg_tiles_to_load;
 
     world.each<Sprite, Size, Position>([&](ecs::EntityID id, Sprite& sprite, Size& size, Position &pos)
     {
         if (world.has<BackgroundTile>(id)) {
-           bkg_tiles_to_load.push_back(id);
+            // TODO: review this according to tile map manager
+           //bkg_tiles_to_load.push_back(id);
         } else {
            FunctionsLib::LoadSprite(ctx.renderer, size, pos, sprite);
         }
@@ -267,9 +296,15 @@ inline bool Quit_Systems(ecs::World& world) {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
+    JsRml::Shutdown();
+    auto& jsContext = world.get_resource<env::JsRmlContext>();
+    jsContext.js.reset();
+
     // RmlUi shutdown
     //-----------------
     auto& rmlCtx = world.get_resource<env::RmlUIContext>();
+    //rmlCtx.context->UnloadAllDocuments();
+    //rmlCtx.context->Update();
     Rml::Shutdown();
     delete rmlCtx.renderInterface;
     delete rmlCtx.systemInterface;
