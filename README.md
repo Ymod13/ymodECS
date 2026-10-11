@@ -8,6 +8,9 @@ Here is a recap of all the features:
 - USD support
 - ImGUI support
 - RmlUI support
+- RmlUi -> JavaScript support
+- TypeScript support
+- SCSS support
 - Collisions
 - Multithreading
 - Access system (first pass stage, not completely integrated in the engine)
