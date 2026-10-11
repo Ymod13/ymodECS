@@ -882,7 +882,7 @@ inline void Render_Scene(ecs::World& world, float dt)
         rmlCtx.context->Update();
     }
 
-    SDL_SetRenderDrawColor(ctx.renderer, 50, 0, 0, 255); // Black
+    SDL_SetRenderDrawColor(ctx.renderer, 71, 171, 169, 255); // Black
     SDL_RenderClear(ctx.renderer);
 
 
