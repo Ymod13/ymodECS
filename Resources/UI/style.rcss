@@ -28,10 +28,13 @@ button {
   background-color: #3498db;
   border: 2px;
   padding: 10px;
+  transform: translateY(0px) scale(1);
+  transition: transform 0.25s linear-in-out;
 }
 
 button:hover {
-  background-color: #000030;
+  background-color: #aaaaaa;
+  transform: translateY(4px) scale(1.1);
 }
 
 /*# sourceMappingURL=style.rcss.map */

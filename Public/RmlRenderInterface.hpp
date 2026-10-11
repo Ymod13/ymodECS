@@ -37,7 +37,17 @@ public:
         for (const auto& v : geometry->vertices)
         {
             SDL_Vertex sv{};
-            sv.position = { v.position.x + translation.x, v.position.y + translation.y };
+
+            Rml::Vector2f pos = { v.position.x + translation.x, v.position.y + translation.y };
+
+            if (hasTransform)
+            {
+                Rml::Vector4f p = transform * Rml::Vector4f(pos.x, pos.y, 0.f, 1.f);
+                if (p.w != 0.f && p.w != 1.f) { p.x /= p.w; p.y /= p.w; }
+                pos = { p.x, p.y };
+            }
+
+            sv.position = { pos.x, pos.y };
             sv.color = { v.colour.red / 255.f, v.colour.green / 255.f,
                          v.colour.blue / 255.f, v.colour.alpha / 255.f };
             sv.tex_coord = { v.tex_coord.x, v.tex_coord.y };
@@ -104,6 +114,13 @@ public:
         SDL_SetRenderClipRect(renderer, &rect);
     }
 
+    void SetTransform(const Rml::Matrix4f* newTransform) override
+    {
+        hasTransform = (newTransform != nullptr);
+        if (newTransform)
+            transform = *newTransform;
+    }
+
 private:
     struct CompiledGeometry
     {
@@ -113,6 +130,9 @@ private:
 
     SDL_Renderer* renderer;
     bool scissorEnabled = false;
+
+    Rml::Matrix4f transform = Rml::Matrix4f::Identity();
+    bool hasTransform = false;
 };
 
 #endif //YMODECS_RMLRENDERINTERFACE_HPP
