@@ -124,6 +124,7 @@ namespace env
         Rml::Context* context = nullptr;
         RmlRenderInterface* renderInterface = nullptr;
         RmlSystemInterface* systemInterface = nullptr;
+        Rml::ElementDocument* doc = nullptr;
     };
 
     struct JsRmlContext {

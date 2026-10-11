@@ -127,7 +127,7 @@ def "Scene" {
         
 		def "Size"
 		{
-			 float2 scale = (1.0, 1.0)
+			 float2 scale = (.2, .2)
 		}
 		
 		def "Visibility"
@@ -173,13 +173,13 @@ def "Scene" {
 
         def "Position"
 		{
-			 float2 pos = (3500.0, 3500.0)
+			 float2 pos = (3000.0, 3500.0)
 		}
 		
         
 		def "Size"
 		{
-			 float2 scale = (1.0, 1.0)
+			 float2 scale = (.2, .2)
 		}
 		
 		def "Visibility"

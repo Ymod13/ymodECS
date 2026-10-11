@@ -12,6 +12,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "ComponetsDefinitions.hpp"
+#include "RmlUi/Core/ElementDocument.h"
 
 using namespace Utils;
 
@@ -929,5 +930,21 @@ bool FunctionsLib::IsSpriteOnScreen(const Sprite &sprite)
            cy + half_diag > view.y && cy - half_diag < view.y + view.h;
            */
 }
+// -------------------------------------------------------------------------------------------------------------
 
+void FunctionsLib::SetUIText(ecs::World &world, const Rml::String &id, const std::string &text)
+{
+    auto& rmlUiCtx = world.get_resource<env::RmlUIContext>();
+
+    if (!rmlUiCtx.doc) {
+        std::cerr << "[SetUIText] Document is null." << std::endl;
+        return;
+    }
+
+    if (Rml::Element* el = rmlUiCtx.doc->GetElementById(id)) {
+        el->SetInnerRML(text);
+    } else {
+        std::cerr << "[SetUIText] Element with id '" << id << "' not found in document." << std::endl;
+    }
+}
 // -------------------------------------------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 const engineMessage: string = "ymodECS TypeScript active!";
 console.log(engineMessage);
 
-const game_status = document.getElementById("game_status")!;
+const game_messages = document.getElementById("game_messages")!;
 document.getElementById("start")!.addEventListener("click", (ev) => {
-    game_status.setInnerRML("Test Message...");
+    game_messages.setInnerRML("Button clicked!");
     console.log("click a", ev.params["mouse_x"], ev.params["mouse_y"]);
 });
 

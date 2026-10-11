@@ -14,7 +14,10 @@
 class RmlRenderInterface : public Rml::RenderInterface
 {
 public:
-    explicit RmlRenderInterface(SDL_Renderer* renderer) : renderer(renderer) {}
+    explicit RmlRenderInterface(SDL_Renderer* renderer) : renderer(renderer)
+    {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    }
 
     // --- Geometria ---
     Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> vertices,

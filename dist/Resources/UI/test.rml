@@ -3,17 +3,27 @@
 <head>
     <link type="text/rcss" href="style.rcss"/>
 </head>
-<body>
-    <div class="content">
-		ymodECS
-		<br/>
-    
-		<button id="start" onclick="console.log('Start button pressed')">Start</button>
-		<br/>
-		<br/>
-		<div id="game_status">Ready</div>
-	
+<body id="main">
+    <div class="game_info">
+		ymodECS<br/>
+		<div class="author">
+		<i>by Domenico Guaccero</i>
+		</div>
 	</div>
+
+    <div id="menu">
+        <button id="start" onclick="console.log('Start button pressed')">Start</button>
+        <br/>
+
+    </div>
+
+     <div class="bottom_messages">
+       <div class="normal_text_box">
+            <div id="game_messages" class="normal_text">
+                Ready...
+            </div>
+       </div>
+     </div>
     
 </body>
 </rml>

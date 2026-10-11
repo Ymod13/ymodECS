@@ -81,6 +81,9 @@ namespace Utils {
         static void DrawSprite(SDL_Renderer* renderer, const Sprite& sprite, const Name* name);
         static bool IsSpriteOnScreen(const Sprite& sprite);
 
+        // UI
+        static void SetUIText(ecs::World &world, const Rml::String& id, const std::string& text);
+
         template<typename EnumType>
         static std::string EnumToString(EnumType value) {
             if constexpr (std::is_same_v<EnumType, env::BulletType>) {

@@ -136,7 +136,7 @@ inline bool Init_Systems(ecs::World& world) {
     Rml::Context* rmlContext = Rml::CreateContext("main", Rml::Vector2i(env::screen_width, env::screen_height));
     if (!rmlContext)
     {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems: Failed to create RmlUi context");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to create RmlUi context");
         return false;
     }
 
@@ -224,11 +224,17 @@ inline bool Init_Systems(ecs::World& world) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to load test.rml");
     }
 
-    // Load JsRml Assets
-    //------------------
+    Rml::ElementDocument* rmlDoc = rmlContext->GetDocument("main");
+    if (rmlDoc) {
+        auto& rmlUiCtx = world.get_resource<env::RmlUIContext>();
+        rmlUiCtx.doc = rmlDoc;
+    }
+    else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Init_Systems (RmlUi): Failed to load main doc");
+    }
 
-
-
+    // BBackgrounds
+    //--------------
     std::vector<ecs::EntityID> bkg_tiles_to_load;
 
     world.each<Sprite, Size, Position>([&](ecs::EntityID id, Sprite& sprite, Size& size, Position &pos)
@@ -245,6 +251,8 @@ inline bool Init_Systems(ecs::World& world) {
         FunctionsLib::LoadBackgroundSprite(world, id, ctx.renderer);
     }
 
+    // renderables setup
+    //------------------
     std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>> renderables_by_layer;
 
     world.each<Actor, Name, Size, Sprite, Visibility, Position>([&](ecs::EntityID id, Actor &actor, Name& name, Size &size, Sprite &sprite, Visibility &visibility, const Position &pos)
@@ -274,6 +282,7 @@ inline bool Init_Systems(ecs::World& world) {
 
     world.add_resource(std::map<UserInterface::LayerType, std::vector<ecs::RenderableEntry>>{renderables_by_layer});
 
+    FunctionsLib::SetUIText(world, "game_messages", "Game initialized!");
 
     return true;
 }
@@ -282,6 +291,7 @@ inline bool Init_Systems(ecs::World& world) {
 inline bool Quit_Systems(ecs::World& world) {
 
     // Cleanup (SDL3 handles memory better, but it's good to be explicit)
+
 
     /*
     world.each<Sprite>([](ecs::EntityID, Sprite& sprite)
